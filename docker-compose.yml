@@ -1,0 +1,42 @@
+# PoC stack: LiveKit media server + token-server + Scout JS web app.
+# Copy .env.example to .env first.
+services:
+  livekit:
+    image: livekit/livekit-server:latest
+    # `--dev` is pre-tuned for localhost and uses the devkey/secret pair (see .env.example).
+    # For production: mount infra/livekit/livekit.yaml, set LIVEKIT_KEYS, and use
+    #   command: --config /etc/livekit/livekit.yaml
+    command: --dev --bind 0.0.0.0
+    ports:
+      - "7880:7880"        # signaling (ws/http)
+      - "7881:7881"        # ICE / TCP fallback
+      - "7882:7882/udp"    # media (UDP mux)
+    restart: unless-stopped
+
+  token-server:
+    build:
+      context: .
+      dockerfile: services/token-server/Dockerfile
+    environment:
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
+      PORT: 3001
+    expose:
+      - "3001"
+    depends_on:
+      - livekit
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/demo/Dockerfile
+    environment:
+      # Browser-facing LiveKit URL (see .env). Local: ws://localhost:7880
+      LIVEKIT_URL: ${LIVEKIT_URL}
+    ports:
+      - "8080:80"
+    depends_on:
+      - token-server
+      - livekit
+    restart: unless-stopped

@@ -1,0 +1,23 @@
+# LiveKit server config for PRODUCTION / self-hosted deployments (e.g. Coolify).
+# Local docker-compose uses `--dev` instead (see docker-compose.yml) which is
+# pre-tuned for localhost. To use this file in production, mount it and start the
+# server with `--config /etc/livekit/livekit.yaml`, and supply keys via the
+# LIVEKIT_KEYS environment variable (so no secrets live in this file).
+port: 7880
+log_level: info
+
+rtc:
+  # TCP fallback for restrictive networks.
+  tcp_port: 7881
+  # Single UDP mux port for media — far easier to expose through a firewall /
+  # Coolify "Ports Mappings" than the default 50000-60000 range.
+  udp_port: 7882
+  # Advertise the host's public IP to clients (discovered via STUN). Required when
+  # the server sits behind NAT, as it does on most cloud hosts.
+  use_external_ip: true
+
+# Keys are provided via the LIVEKIT_KEYS env var, e.g. "devkey: secret".
+# keys:
+#   <api-key>: <api-secret>
+
+# A single-node PoC needs no Redis. Add a redis block for multi-node setups.
