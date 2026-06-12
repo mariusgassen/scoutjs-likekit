@@ -1,0 +1,20 @@
+{
+  "name": "demo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Scout JS demo app hosting the @bsi/scout-livekit meeting widget",
+  "scripts": {
+    "dev": "scout-scripts build:dev:watch",
+    "build": "scout-scripts build:prod && node scripts/generate-site.mjs",
+    "build:dev": "scout-scripts build:dev",
+    "test": "scout-scripts test-server:start"
+  },
+  "dependencies": {
+    "@bsi/scout-livekit": "0.1.0",
+    "@eclipse-scout/core": "^26.1.16"
+  },
+  "devDependencies": {
+    "@eclipse-scout/cli": "^26.1.16",
+    "typescript": "~5.4.5"
+  }
+}

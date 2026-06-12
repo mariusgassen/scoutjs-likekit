@@ -1,0 +1,23 @@
+{
+  "name": "scoutjs-livekit-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Reusable BSI Scout JS LiveKit meeting component (PoC) — monorepo",
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "services/*"
+  ],
+  "scripts": {
+    "build:lib": "npm run build --workspace=@bsi/scout-livekit",
+    "build:demo": "npm run build --workspace=demo",
+    "build:token": "npm run build --workspace=token-server",
+    "build": "npm run build:lib && npm run build:token && npm run build:demo",
+    "dev:lib": "npm run build:watch --workspace=@bsi/scout-livekit",
+    "dev:demo": "npm run dev --workspace=demo",
+    "dev:token": "npm run dev --workspace=token-server"
+  },
+  "engines": {
+    "node": ">=24.12.0"
+  }
+}
