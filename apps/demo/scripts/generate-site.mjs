@@ -8,6 +8,7 @@
  *     index.html      <- res/index.html with <link>/<script> tags injected
  *     config.js       <- copied from res (rewritten from $LIVEKIT_URL at container start)
  *     prod/...        <- hashed js/css assets
+ *     prod/fonts/...  <- Scout icon fonts referenced by the theme CSS
  */
 import {cpSync, mkdirSync, readFileSync, rmSync, writeFileSync} from 'node:fs';
 import {dirname, join} from 'node:path';
@@ -17,6 +18,14 @@ const demoDir = join(dirname(fileURLToPath(import.meta.url)), '..');
 const prodDir = join(demoDir, 'target', 'dist', 'prod');
 const resDir = join(demoDir, 'target', 'dist', 'res');
 const siteDir = join(demoDir, 'target', 'site');
+
+// The theme CSS references icon fonts via relative url(fonts/...), but Scout's
+// build:prod does not emit them (a Scout host server normally serves them from
+// @eclipse-scout/core). Copy them out of the package so nginx can serve them.
+// @eclipse-scout/core only exposes an `import` exports condition, so resolve its
+// entry (dist/eclipse-scout-core.esm.js) and pick up the sibling dist/fonts dir.
+const scoutCoreEntry = fileURLToPath(import.meta.resolve('@eclipse-scout/core'));
+const scoutFontsDir = join(dirname(scoutCoreEntry), 'fonts');
 
 const fileList = readFileSync(join(prodDir, 'file-list'), 'utf8')
   .split('\n')
@@ -39,9 +48,11 @@ html = html.replace('</body>', `${scriptTags}\n</body>`);
 rmSync(siteDir, {recursive: true, force: true});
 mkdirSync(siteDir, {recursive: true});
 cpSync(prodDir, join(siteDir, 'prod'), {recursive: true});
+cpSync(scoutFontsDir, join(siteDir, 'prod', 'fonts'), {recursive: true});
 cpSync(resDir, siteDir, {recursive: true}); // brings config.js (and the raw index.html, overwritten next)
 writeFileSync(join(siteDir, 'index.html'), html);
 
 console.log(`Generated static site at ${siteDir}`);
+console.log(`  fonts  : ${scoutFontsDir}`);
 console.log(`  styles : ${styles.join(', ') || '(none)'}`);
 console.log(`  scripts: ${scripts.join(', ') || '(none)'}`);
