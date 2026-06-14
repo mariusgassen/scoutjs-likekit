@@ -104,8 +104,25 @@ WebRTC media (UDP) **cannot** go through Traefik.
 > `docker-compose.yml`.** The root file is for local dev — it host-binds the web app on
 > `:8080`, which collides with Coolify on the VPS (`Bind for 0.0.0.0:8080 failed: port is
 > already allocated`) and runs LiveKit in `--dev`. The Coolify compose fronts `web` and
-> `token-server` with Traefik (assign each a domain in the Coolify UI — no host ports) and
-> publishes only LiveKit's media/TURN ports.
+> `livekit` (signaling) with Traefik and publishes only LiveKit's media ports.
+
+#### Which service gets which domain
+
+Coolify only shows a **domain field** for a compose service when a `SERVICE_FQDN_<SERVICE>_<PORT>`
+magic variable is declared for it (otherwise no domain input appears after reloading the
+compose). They're already in [`docker-compose.coolify.yml`](docker-compose.coolify.yml) — you
+just fill in the value in the Coolify UI. The public URL is always `https://…` on 443
+(Traefik terminates TLS); the port below is the *container* port Traefik routes to.
+
+| Service | Domain to set (in UI) | Container port | Notes |
+|---|---|---|---|
+| `web` | `https://meet.example.com` (your app) | `80` | The app users open. |
+| `livekit` | `https://livekit.example.com` | `7880` | Signaling. Browser uses `wss://livekit.example.com` → set `LIVEKIT_URL` to that. |
+| `token-server` | *(none)* | `3001` | Internal only — reached via `web`'s `/api` proxy. Do not give it a domain. |
+
+Enter the domains with the `https://` scheme and **no port** — Traefik serves them on 443
+and routes to the container port from the magic var. Don't append `:7880`/`:80` to the
+public URL.
 
 1. **LiveKit server** — built from [`infra/livekit/Dockerfile`](infra/livekit/Dockerfile),
    which **bakes** [`infra/livekit/livekit.yaml`](infra/livekit/livekit.yaml) into the

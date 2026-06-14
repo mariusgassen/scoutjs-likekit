@@ -26,9 +26,13 @@ services:
       # token-server uses (below), so you set just those two vars and both sides
       # automatically share one key pair. Do NOT also set LIVEKIT_KEYS yourself.
       LIVEKIT_KEYS: "${LIVEKIT_API_KEY}: ${LIVEKIT_API_SECRET}"
-    # Signaling (7880) is proxied by Traefik via the `livekit` service domain — do NOT
-    # publish it here. Only the media ports bypass Traefik and bind the host
-    # (these are the Coolify "Ports Mappings" you opened in the firewall):
+      # Coolify magic var: surfaces the signaling domain field for this service, routing
+      # it to port 7880. Set it in the UI to e.g. https://livekit.example.com; the browser
+      # then connects wss://livekit.example.com (LIVEKIT_URL on the web service).
+      SERVICE_FQDN_LIVEKIT_7880: ""
+    # Signaling (7880) is proxied by Traefik via the domain above — do NOT publish it
+    # here. Only the media ports bypass Traefik and bind the host (these are the Coolify
+    # "Ports Mappings" you opened in the firewall):
     ports:
       - "7881:7881"        # ICE / TCP fallback
       - "7882:7882/udp"    # media (UDP mux)
@@ -73,10 +77,15 @@ services:
       context: .
       dockerfile: apps/demo/Dockerfile
     environment:
+      # Coolify magic var: marks this service web-facing on port 80 and makes its domain
+      # field appear in the Coolify UI (compose services get NO domain field otherwise).
+      # Leave empty and set the real domain in the UI -> Coolify generates the Traefik
+      # labels. This is the app's public URL, e.g. https://meet.example.com.
+      SERVICE_FQDN_WEB_80: ""
       # Browser-facing signaling URL — must be wss:// from an HTTPS page.
       LIVEKIT_URL: ${LIVEKIT_URL}
-    # Fronted by Traefik via the `web` service domain — no host port binding (this is
-    # what fixes the :8080 "port is already allocated" failure).
+    # Fronted by Traefik via the domain above — no host port binding (this is what fixes
+    # the :8080 "port is already allocated" failure).
     expose:
       - "80"
     depends_on:
