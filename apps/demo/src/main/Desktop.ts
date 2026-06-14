@@ -1,18 +1,18 @@
 import {Desktop as ScoutDesktop, Form, InitModelOf, scout} from '@eclipse-scout/core';
-import {MeetingForm} from './MeetingForm';
+import {MainForm} from './MainForm';
 
 export class Desktop extends ScoutDesktop {
 
   protected override _jsonModel(): object {
     return {
-      title: 'BSI Scout JS · LiveKit Meetings',
+      title: 'Scout Meet · LiveKit',
       displayStyle: ScoutDesktop.DisplayStyle.BENCH
     };
   }
 
   protected override _init(model: InitModelOf<this>): void {
     super._init(model);
-    const form = scout.create(MeetingForm, {
+    const form = scout.create(MainForm, {
       parent: this,
       displayHint: Form.DisplayHint.VIEW
     });

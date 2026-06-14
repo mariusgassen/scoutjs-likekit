@@ -25,6 +25,7 @@ export interface LiveKitAdapterCallbacks {
   onTrackUnsubscribed?: (track: RemoteTrack, participant: RemoteParticipant) => void;
   onLocalTrackPublished?: (publication: LocalTrackPublication) => void;
   onLocalTrackUnpublished?: (publication: LocalTrackPublication) => void;
+  onParticipantConnected?: (participant: RemoteParticipant) => void;
   onParticipantDisconnected?: (participant: RemoteParticipant) => void;
   onDataReceived?: (message: ChatMessage, participant?: Participant) => void;
   onConnectionStateChanged?: (state: ConnectionState) => void;
@@ -61,6 +62,9 @@ export class LiveKitClientAdapter {
       })
       .on(RoomEvent.LocalTrackUnpublished, (pub: LocalTrackPublication) => {
         this.callbacks.onLocalTrackUnpublished?.(pub);
+      })
+      .on(RoomEvent.ParticipantConnected, (participant: RemoteParticipant) => {
+        this.callbacks.onParticipantConnected?.(participant);
       })
       .on(RoomEvent.ParticipantDisconnected, (participant: RemoteParticipant) => {
         this.callbacks.onParticipantDisconnected?.(participant);
@@ -138,6 +142,11 @@ export class LiveKitClientAdapter {
       }
     });
     return result;
+  }
+
+  /** Total participants currently in the room, including the local participant. */
+  participantCount(): number {
+    return this.room.remoteParticipants.size + 1;
   }
 
   async disconnect(): Promise<void> {

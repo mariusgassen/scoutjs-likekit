@@ -13,16 +13,18 @@ services:
       - "7882:7882/udp"    # media (UDP mux)
     restart: unless-stopped
 
-  token-server:
+  # Eclipse Scout RT backend: LiveKit tokens + contacts + persistent chat (H2 on a volume).
+  meeting-server:
     build:
       context: .
-      dockerfile: services/token-server/Dockerfile
+      dockerfile: services/meeting-server/Dockerfile
     environment:
       LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
       LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
-      PORT: 3001
+    volumes:
+      - meeting-data:/data
     expose:
-      - "3001"
+      - "8080"
     depends_on:
       - livekit
     restart: unless-stopped
@@ -37,6 +39,9 @@ services:
     ports:
       - "8080:80"
     depends_on:
-      - token-server
+      - meeting-server
       - livekit
     restart: unless-stopped
+
+volumes:
+  meeting-data:

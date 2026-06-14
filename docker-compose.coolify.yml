@@ -53,17 +53,20 @@ services:
     #   - "traefik.tcp.routers.turn.service=turn"
     #   - "traefik.tcp.services.turn.loadbalancer.server.port=5349"
 
-  token-server:
+  # Eclipse Scout RT backend: LiveKit tokens + contacts + persistent chat.
+  meeting-server:
     build:
       context: .
-      dockerfile: services/token-server/Dockerfile
+      dockerfile: services/meeting-server/Dockerfile
     environment:
       LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
       LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
-      PORT: 3001
+    # Chat history + conversations persist on this volume across redeploys.
+    volumes:
+      - meeting-data:/data
     # Internal only — the web app's nginx proxies /api/ to this service by name.
     expose:
-      - "3001"
+      - "8080"
     depends_on:
       - livekit
     restart: unless-stopped
@@ -80,6 +83,9 @@ services:
     expose:
       - "80"
     depends_on:
-      - token-server
+      - meeting-server
       - livekit
     restart: unless-stopped
+
+volumes:
+  meeting-data:

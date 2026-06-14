@@ -16,4 +16,15 @@ export interface LiveKitMeetingModel extends WidgetModel {
   displayName?: string;
   /** Connect automatically once the widget is rendered. Default `false`. */
   autoConnect?: boolean;
+  /**
+   * Render the built-in data-channel chat panel. Default `true`. Set to `false` when the host
+   * app provides its own (e.g. a server-persisted) chat, so the widget is video/audio only.
+   */
+  chatEnabled?: boolean;
+  /**
+   * Shareable URL that lets others join this room. When set, the meeting header
+   * shows a "Copy invite link" button. The host app builds this (the widget is
+   * agnostic about the app's URL scheme).
+   */
+  inviteUrl?: string;
 }
