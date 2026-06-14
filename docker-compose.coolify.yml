@@ -13,27 +13,29 @@
 #     and publishes ONLY the media/TURN ports, which genuinely cannot go through Traefik.
 services:
   livekit:
-    image: livekit/livekit-server:latest
-    command: --config /etc/livekit/livekit.yaml
+    # Custom image with the production config baked in — see infra/livekit/Dockerfile.
+    # We deliberately do NOT bind-mount the config: Coolify mis-resolves relative
+    # bind-mount sources and Docker then creates a directory at the target, causing
+    # "read /etc/livekit/livekit.yaml: is a directory".
+    build:
+      context: .
+      dockerfile: infra/livekit/Dockerfile
     environment:
       # e.g. LIVEKIT_KEYS="my-key: my-secret"
       LIVEKIT_KEYS: ${LIVEKIT_KEYS}
-    volumes:
-      - ./infra/livekit/livekit.yaml:/etc/livekit/livekit.yaml:ro
-      # TURN/TLS cert + key (tls.crt, tls.key) for port 5349. See README. Leave the
-      # `turn:` block commented out in livekit.yaml until these exist, or LiveKit will
-      # fail to start.
-      - ./infra/livekit/turn:/etc/livekit/turn:ro
     # Signaling (7880) is proxied by Traefik via the `livekit` service domain — do NOT
     # publish it here. Only the media/TURN ports bypass Traefik and bind the host
     # (these are the Coolify "Ports Mappings" you opened in the firewall):
     ports:
       - "7881:7881"        # ICE / TCP fallback
       - "7882:7882/udp"    # media (UDP mux)
-      - "5349:5349"        # TURN over TLS
+      - "5349:5349"        # TURN over TLS (only used once TURN is enabled — see below)
     expose:
       - "7880"             # signaling — picked up by Traefik via the service domain
     restart: unless-stopped
+    # TURN is disabled by default (see infra/livekit/livekit.yaml). To enable it, add a
+    # cert to /etc/livekit/turn/ via a Coolify UI File Mount, uncomment the `turn:` block
+    # in livekit.yaml, and redeploy.
 
   token-server:
     build:

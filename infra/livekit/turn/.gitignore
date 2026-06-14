@@ -1,7 +1,0 @@
-# TURN/TLS cert + key for LiveKit's embedded TURN server (port 5349) live here:
-#   tls.crt, tls.key
-# They are deployment secrets — never commit them. This .gitignore keeps the
-# directory present (so docker-compose.coolify.yml's bind mount resolves) while
-# ignoring the cert material itself.
-*
-!.gitignore
