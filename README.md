@@ -126,20 +126,44 @@ Generate strong, unique `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` for production.
 ### TURN/TLS for clients behind strict firewalls
 
 Clients on networks that block UDP (`7882`) and the TCP fallback (`7881`) need LiveKit's
-embedded **TURN over TLS** on port **`5349`**. It is **disabled by default** in
+embedded **TURN over TLS**. It is **disabled by default** in
 [`infra/livekit/livekit.yaml`](infra/livekit/livekit.yaml) because LiveKit crash-loops at
-startup if TURN is enabled without a valid cert. It is published directly on the host
-(Coolify **Ports Mappings** `5349:5349` + firewall) and does **not** go through Traefik.
-To enable it:
+startup if TURN is enabled without a valid cert.
 
-- Point a DNS record (e.g. `turn.example.com`) at the host's public IP and set it as
-  `turn.domain` in the config.
-- LiveKit terminates TLS on `5349` itself, so provide a valid cert + key (in Coolify, a UI
-  **File Mount** to `/etc/livekit/turn/`) at the `cert_file` / `key_file` paths.
-- Uncomment the `turn:` block in `livekit.yaml` and redeploy.
-- Alternatively, front it with a Traefik **TCP router in TLS-passthrough** mode keyed on
-  the TURN SNI (so it can share `443`), and set `external_tls: true` to let Traefik own
-  the cert — then drop `cert_file` / `key_file`.
+> **You may not need this.** With UDP `7882` and TCP `7881` open at the firewall, the large
+> majority of clients connect fine. TURN/TLS only matters for locked-down corporate/mobile
+> networks. Add it only if someone actually can't connect.
+
+#### TURN/TLS with an automatic Traefik cert (recommended — no manual cert)
+
+The trick: **don't give LiveKit a cert.** Coolify/Traefik stores certs in `acme.json`
+(not PEM files LiveKit can read), so instead let Traefik **terminate** TLS with its
+auto-issued, auto-renewed Let's Encrypt cert and forward *plaintext* to LiveKit
+(`external_tls: true`). Put it on **443** — the whole point of TURN/TLS is reaching clients
+whose firewall allows nothing but 443, so a dedicated `:5349` would often be blocked too.
+
+```
+client ──TLS(turns:443)──► Traefik :443 ──plaintext──► livekit TURN :5349
+                           (Coolify auto LE cert,        (external_tls: true)
+                            SNI = turn.example.com)
+```
+
+1. **DNS** — point `turn.example.com` at the VPS public IP.
+2. **Cert (automatic)** — in Coolify, add `turn.example.com` as a **domain** on the
+   `livekit` service. Coolify issues and renews the Let's Encrypt cert for it; there is
+   nothing to mount or rotate by hand.
+3. **Traefik route** — uncomment the `traefik.tcp.*` labels on the `livekit` service in
+   [`docker-compose.coolify.yml`](docker-compose.coolify.yml), setting your real hostname
+   and Coolify's cert-resolver name (usually `letsencrypt`).
+4. **LiveKit** — uncomment the `turn:` block in `livekit.yaml` (`external_tls: true`,
+   `tls_port: 443`) and set `domain`. No `cert_file`/`key_file`. `5349` stays internal
+   (Traefik reaches it over the Docker network), so it is no longer host-published.
+5. Redeploy.
+
+If you'd rather keep the dedicated `:5349` you already opened in the firewall, it works the
+same — set `tls_port: 5349`, route the labels to a `:5349` Traefik entrypoint instead of
+`https`, and re-add the `5349:5349` host port. 443 just needs less proxy config and is more
+firewall-friendly.
 
 ## Build & test commands
 

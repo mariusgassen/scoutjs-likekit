@@ -17,27 +17,27 @@ rtc:
   use_external_ip: true
 
 # Embedded TURN over TLS — the firewall-friendly fallback for clients that can only
-# reach the outside world over TLS (UDP/7882 and TCP/7881 blocked). Published directly
-# on the host (Coolify Ports Mappings: 5349:5349, opened in the firewall) — it does NOT
-# go through Traefik.
+# reach the outside world over TLS (UDP/7882 and TCP/7881 blocked).
 #
-# DISABLED by default: TURN needs a real TLS cert, and LiveKit crash-loops at startup
-# if `enabled: true` but the cert files are missing. To turn it on:
-#   1. Get a cert for your TURN domain and place tls.crt + tls.key at the cert_file /
-#      key_file paths below (in Coolify, use a UI File Mount to /etc/livekit/turn/).
-#   2. Uncomment the block and set `domain` to your real TURN hostname.
+# DISABLED by default. The recommended way to enable it on Coolify needs NO manual cert:
+# let Traefik terminate TLS with its automatic Let's Encrypt cert and forward plaintext
+# to LiveKit (external_tls: true). Full walkthrough in the README ("TURN/TLS with an
+# automatic Traefik cert"). In short:
+#   1. DNS: point turn.example.com at the VPS public IP.
+#   2. In Coolify, add turn.example.com as a domain on the `livekit` service — that makes
+#      Coolify issue + auto-renew the cert. (No cert_file/key_file here.)
+#   3. Add the Traefik TCP-router labels (see docker-compose.coolify.yml) so 443/SNI
+#      forwards to LiveKit's TURN port.
+#   4. Uncomment the block below and set `domain` to your real TURN hostname.
 # turn:
 #   enabled: true
-#   # DNS name whose TLS cert LiveKit presents here. Point a record (e.g.
-#   # turn.example.com) at the host's public IP.
 #   domain: turn.example.com
-#   tls_port: 5349
-#   # LiveKit terminates TLS itself on 5349, so provide a cert + key and point to them.
-#   # (Alternative: put Traefik in TLS-passthrough in front and set external_tls: true
-#   # to let Traefik own the cert — then drop cert_file/key_file.)
-#   cert_file: /etc/livekit/turn/tls.crt
-#   key_file: /etc/livekit/turn/tls.key
-#   external_tls: false
+#   # Port clients dial for turns:. 443 is the most firewall-friendly (the whole point of
+#   # TURN/TLS); Traefik fronts it and forwards to LiveKit over the internal network.
+#   tls_port: 443
+#   # TLS is terminated upstream by Traefik, so LiveKit just listens for plain TCP and
+#   # holds no cert. This is what makes the cert fully automatic + auto-renewed.
+#   external_tls: true
 
 # Keys are provided via the LIVEKIT_KEYS env var, e.g. "devkey: secret".
 # keys:
