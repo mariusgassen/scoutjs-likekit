@@ -1,8 +1,8 @@
 # LiveKit server config for PRODUCTION / self-hosted deployments (e.g. Coolify).
 # Local docker-compose uses `--dev` instead (see docker-compose.yml) which is
-# pre-tuned for localhost. To use this file in production, mount it and start the
-# server with `--config /etc/livekit/livekit.yaml`, and supply keys via the
-# LIVEKIT_KEYS environment variable (so no secrets live in this file).
+# pre-tuned for localhost. In production this file is baked into a custom image
+# (infra/livekit/Dockerfile) and started with `--config /etc/livekit/livekit.yaml`;
+# keys are supplied via the LIVEKIT_KEYS environment variable (so no secrets live here).
 port: 7880
 log_level: info
 
@@ -20,18 +20,24 @@ rtc:
 # reach the outside world over TLS (UDP/7882 and TCP/7881 blocked). Published directly
 # on the host (Coolify Ports Mappings: 5349:5349, opened in the firewall) — it does NOT
 # go through Traefik.
-turn:
-  enabled: true
-  # DNS name whose TLS cert LiveKit presents here. Point a record (e.g.
-  # turn.example.com) at the host's public IP.
-  domain: turn.example.com
-  tls_port: 5349
-  # LiveKit terminates TLS itself on 5349, so mount a cert + key and point to them.
-  # (Alternative: put Traefik in TLS-passthrough in front and set external_tls: true
-  # to let Traefik own the cert — then drop cert_file/key_file.)
-  cert_file: /etc/livekit/turn/tls.crt
-  key_file: /etc/livekit/turn/tls.key
-  external_tls: false
+#
+# DISABLED by default: TURN needs a real TLS cert, and LiveKit crash-loops at startup
+# if `enabled: true` but the cert files are missing. To turn it on:
+#   1. Get a cert for your TURN domain and place tls.crt + tls.key at the cert_file /
+#      key_file paths below (in Coolify, use a UI File Mount to /etc/livekit/turn/).
+#   2. Uncomment the block and set `domain` to your real TURN hostname.
+# turn:
+#   enabled: true
+#   # DNS name whose TLS cert LiveKit presents here. Point a record (e.g.
+#   # turn.example.com) at the host's public IP.
+#   domain: turn.example.com
+#   tls_port: 5349
+#   # LiveKit terminates TLS itself on 5349, so provide a cert + key and point to them.
+#   # (Alternative: put Traefik in TLS-passthrough in front and set external_tls: true
+#   # to let Traefik own the cert — then drop cert_file/key_file.)
+#   cert_file: /etc/livekit/turn/tls.crt
+#   key_file: /etc/livekit/turn/tls.key
+#   external_tls: false
 
 # Keys are provided via the LIVEKIT_KEYS env var, e.g. "devkey: secret".
 # keys:

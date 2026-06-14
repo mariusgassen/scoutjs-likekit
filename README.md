@@ -107,8 +107,10 @@ WebRTC media (UDP) **cannot** go through Traefik.
 > `token-server` with Traefik (assign each a domain in the Coolify UI — no host ports) and
 > publishes only LiveKit's media/TURN ports.
 
-1. **LiveKit server** — runs the production config: `--config /etc/livekit/livekit.yaml`
-   (mounted from [`infra/livekit/livekit.yaml`](infra/livekit/livekit.yaml)) with
+1. **LiveKit server** — built from [`infra/livekit/Dockerfile`](infra/livekit/Dockerfile),
+   which **bakes** [`infra/livekit/livekit.yaml`](infra/livekit/livekit.yaml) into the
+   image (Coolify mis-resolves relative bind-mount paths, which otherwise causes
+   `read /etc/livekit/livekit.yaml: is a directory`). Set
    `LIVEKIT_KEYS="<your-key>: <your-secret>"`. In Coolify **Ports Mappings** add
    `7882:7882/udp`, `7881:7881`, and `5349:5349` (TURN/TLS), and open those ports in the
    host firewall. Assign the `livekit` service a domain so Traefik proxies signaling
@@ -124,14 +126,17 @@ Generate strong, unique `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` for production.
 ### TURN/TLS for clients behind strict firewalls
 
 Clients on networks that block UDP (`7882`) and the TCP fallback (`7881`) need LiveKit's
-embedded **TURN over TLS**, already enabled in [`infra/livekit/livekit.yaml`](infra/livekit/livekit.yaml)
-on port **`5349`**. It is published directly on the host (Coolify **Ports Mappings**
-`5349:5349` + firewall) and does **not** go through Traefik. Required setup:
+embedded **TURN over TLS** on port **`5349`**. It is **disabled by default** in
+[`infra/livekit/livekit.yaml`](infra/livekit/livekit.yaml) because LiveKit crash-loops at
+startup if TURN is enabled without a valid cert. It is published directly on the host
+(Coolify **Ports Mappings** `5349:5349` + firewall) and does **not** go through Traefik.
+To enable it:
 
 - Point a DNS record (e.g. `turn.example.com`) at the host's public IP and set it as
   `turn.domain` in the config.
-- LiveKit terminates TLS on `5349` itself, so mount a valid cert + key at
-  `cert_file` / `key_file`.
+- LiveKit terminates TLS on `5349` itself, so provide a valid cert + key (in Coolify, a UI
+  **File Mount** to `/etc/livekit/turn/`) at the `cert_file` / `key_file` paths.
+- Uncomment the `turn:` block in `livekit.yaml` and redeploy.
 - Alternatively, front it with a Traefik **TCP router in TLS-passthrough** mode keyed on
   the TURN SNI (so it can share `443`), and set `external_tls: true` to let Traefik own
   the cert — then drop `cert_file` / `key_file`.
