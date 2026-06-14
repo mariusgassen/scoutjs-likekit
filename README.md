@@ -110,13 +110,15 @@ WebRTC media (UDP) **cannot** go through Traefik.
 1. **LiveKit server** — built from [`infra/livekit/Dockerfile`](infra/livekit/Dockerfile),
    which **bakes** [`infra/livekit/livekit.yaml`](infra/livekit/livekit.yaml) into the
    image (Coolify mis-resolves relative bind-mount paths, which otherwise causes
-   `read /etc/livekit/livekit.yaml: is a directory`). Set
-   `LIVEKIT_KEYS="<your-key>: <your-secret>"`. In Coolify **Ports Mappings** add
+   `read /etc/livekit/livekit.yaml: is a directory`). In Coolify **Ports Mappings** add
    `7882:7882/udp`, `7881:7881`, and `5349:5349` (TURN/TLS), and open those ports in the
    host firewall. Assign the `livekit` service a domain so Traefik proxies signaling
    (`7880`) → `wss://livekit.example.com`.
-2. **token-server** — set `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` (matching the LiveKit
-   keys). Keep it internal; the web app reaches it via `/api`.
+2. **Keys** — set **only** `LIVEKIT_API_KEY` and `LIVEKIT_API_SECRET` (one shared pair).
+   The token-server reads them directly; the LiveKit server needs them in `LIVEKIT_KEYS`
+   (`"<key>: <secret>"`) form, which the compose derives for you from those two vars — so
+   don't set `LIVEKIT_KEYS` yourself. Keep the token-server internal; the web app reaches
+   it via `/api`.
 3. **web** — set `LIVEKIT_URL=wss://livekit.example.com` (must be `wss://` from an HTTPS
    page) and assign it the app domain. `config.js` is regenerated from this env var on
    container start.

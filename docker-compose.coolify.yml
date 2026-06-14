@@ -21,8 +21,11 @@ services:
       context: .
       dockerfile: infra/livekit/Dockerfile
     environment:
-      # e.g. LIVEKIT_KEYS="my-key: my-secret"
-      LIVEKIT_KEYS: ${LIVEKIT_KEYS}
+      # The LiveKit *server* reads its key pair from LIVEKIT_KEYS in "<key>: <secret>"
+      # form. We build it from the same LIVEKIT_API_KEY / LIVEKIT_API_SECRET the
+      # token-server uses (below), so you set just those two vars and both sides
+      # automatically share one key pair. Do NOT also set LIVEKIT_KEYS yourself.
+      LIVEKIT_KEYS: "${LIVEKIT_API_KEY}: ${LIVEKIT_API_SECRET}"
     # Signaling (7880) is proxied by Traefik via the `livekit` service domain — do NOT
     # publish it here. Only the media ports bypass Traefik and bind the host
     # (these are the Coolify "Ports Mappings" you opened in the firewall):
