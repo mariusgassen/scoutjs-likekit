@@ -150,17 +150,21 @@ client ──TLS(turns:443)──► Traefik :443 ──plaintext──► livek
                             SNI = turn.example.com)
 ```
 
-1. **DNS** — point `turn.example.com` at the VPS public IP.
-2. **Cert (automatic)** — in Coolify, add `turn.example.com` as a **domain** on the
-   `livekit` service. Coolify issues and renews the Let's Encrypt cert for it; there is
-   nothing to mount or rotate by hand.
-3. **Traefik route** — uncomment the `traefik.tcp.*` labels on the `livekit` service in
+TURN is **part of the `livekit` service** — it's LiveKit's *embedded* TURN server (same
+container, no separate service). You enable it by uncommenting config in two files; you do
+**not** add its hostname as a Coolify UI domain (that would create a conflicting HTTP router).
+
+1. **DNS** — point `turn.example.com` at the VPS public IP, and keep port `80` reachable so
+   Let's Encrypt can validate via the HTTP-01 challenge.
+2. **Traefik route** — uncomment the `traefik.tcp.*` labels on the `livekit` service in
    [`docker-compose.coolify.yml`](docker-compose.coolify.yml), setting your real hostname
-   and Coolify's cert-resolver name (usually `letsencrypt`).
-4. **LiveKit** — uncomment the `turn:` block in `livekit.yaml` (`external_tls: true`,
+   and Coolify's cert-resolver name (usually `letsencrypt`). The `tls.certresolver` on that
+   TCP router is what makes Traefik **request and auto-renew** the cert — no UI domain and
+   no PEM files.
+3. **LiveKit** — uncomment the `turn:` block in `livekit.yaml` (`external_tls: true`,
    `tls_port: 443`) and set `domain`. No `cert_file`/`key_file`. `5349` stays internal
    (Traefik reaches it over the Docker network), so it is no longer host-published.
-5. Redeploy.
+4. Redeploy.
 
 If you'd rather keep the dedicated `:5349` you already opened in the firewall, it works the
 same — set `tls_port: 5349`, route the labels to a `:5349` Traefik entrypoint instead of

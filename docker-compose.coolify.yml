@@ -38,13 +38,14 @@ services:
     # --- TURN over TLS with an AUTOMATIC Traefik cert (disabled by default) ----------
     # No manual cert: Traefik terminates TLS with its Let's Encrypt cert and forwards
     # plaintext to LiveKit (livekit.yaml -> turn.external_tls: true). To enable:
-    #   1. DNS: turn.example.com -> VPS public IP.
-    #   2. In Coolify, add turn.example.com as a domain on THIS service (issues the cert).
-    #   3. Uncomment the `turn:` block in infra/livekit/livekit.yaml.
-    #   4. Uncomment the labels below (set your real TURN hostname + Coolify's
+    #   1. DNS: turn.example.com -> VPS public IP (keep port 80 reachable for ACME).
+    #   2. Uncomment the `turn:` block in infra/livekit/livekit.yaml.
+    #   3. Uncomment the labels below (set your real TURN hostname + Coolify's
     #      certresolver name — usually `letsencrypt`), then redeploy.
-    # Because Traefik reaches TURN over the internal Docker network, 5349 is NOT
-    # published to the host in this mode.
+    # The cert is requested + auto-renewed by the tls.certresolver on the TCP router
+    # below — do NOT add this hostname as a Coolify UI domain (that makes a conflicting
+    # HTTP router). TURN routes via these labels, not a SERVICE_FQDN var. And because
+    # Traefik reaches TURN over the internal Docker network, 5349 is NOT host-published.
     # labels:
     #   - "traefik.tcp.routers.turn.rule=HostSNI(`turn.example.com`)"
     #   - "traefik.tcp.routers.turn.entrypoints=https"   # 443
