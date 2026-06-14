@@ -103,16 +103,31 @@ WebRTC media (UDP) **cannot** go through Traefik.
 1. **LiveKit server** — deploy as its own Coolify resource. Use the production config:
    start with `--config /etc/livekit/livekit.yaml` (mount [`infra/livekit/livekit.yaml`](infra/livekit/livekit.yaml))
    and set `LIVEKIT_KEYS="<your-key>: <your-secret>"`. In Coolify **Ports Mappings** add
-   `7882:7882/udp` (and `7881:7881`), and open those ports in the host firewall.
-   Expose signaling (`7880`) via Traefik on a subdomain → `wss://livekit.example.com`.
+   `7882:7882/udp`, `7881:7881`, and `5349:5349` (TURN/TLS), and open those ports in the
+   host firewall. Expose signaling (`7880`) via Traefik on a subdomain →
+   `wss://livekit.example.com`.
 2. **token-server** — set `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` (matching the LiveKit
    keys). Keep it internal; the web app reaches it via `/api`.
 3. **web** — set `LIVEKIT_URL=wss://livekit.example.com` (must be `wss://` from an HTTPS
    page). `config.js` is regenerated from this env var on container start.
 
 Generate strong, unique `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` for production and drop
-`--dev`. For clients behind strict firewalls, enabling LiveKit's embedded TURN (TURN/TLS
-over 443) is the production hardening step.
+`--dev`.
+
+### TURN/TLS for clients behind strict firewalls
+
+Clients on networks that block UDP (`7882`) and the TCP fallback (`7881`) need LiveKit's
+embedded **TURN over TLS**, already enabled in [`infra/livekit/livekit.yaml`](infra/livekit/livekit.yaml)
+on port **`5349`**. It is published directly on the host (Coolify **Ports Mappings**
+`5349:5349` + firewall) and does **not** go through Traefik. Required setup:
+
+- Point a DNS record (e.g. `turn.example.com`) at the host's public IP and set it as
+  `turn.domain` in the config.
+- LiveKit terminates TLS on `5349` itself, so mount a valid cert + key at
+  `cert_file` / `key_file`.
+- Alternatively, front it with a Traefik **TCP router in TLS-passthrough** mode keyed on
+  the TURN SNI (so it can share `443`), and set `external_tls: true` to let Traefik own
+  the cert — then drop `cert_file` / `key_file`.
 
 ## Build & test commands
 
