@@ -100,19 +100,26 @@ const meeting = scout.create(LiveKitMeeting, {
 Web app and token-server sit behind Coolify's **Traefik** proxy (HTTPS via Let's Encrypt).
 WebRTC media (UDP) **cannot** go through Traefik.
 
-1. **LiveKit server** — deploy as its own Coolify resource. Use the production config:
-   start with `--config /etc/livekit/livekit.yaml` (mount [`infra/livekit/livekit.yaml`](infra/livekit/livekit.yaml))
-   and set `LIVEKIT_KEYS="<your-key>: <your-secret>"`. In Coolify **Ports Mappings** add
+> **Use [`docker-compose.coolify.yml`](docker-compose.coolify.yml), not the root
+> `docker-compose.yml`.** The root file is for local dev — it host-binds the web app on
+> `:8080`, which collides with Coolify on the VPS (`Bind for 0.0.0.0:8080 failed: port is
+> already allocated`) and runs LiveKit in `--dev`. The Coolify compose fronts `web` and
+> `token-server` with Traefik (assign each a domain in the Coolify UI — no host ports) and
+> publishes only LiveKit's media/TURN ports.
+
+1. **LiveKit server** — runs the production config: `--config /etc/livekit/livekit.yaml`
+   (mounted from [`infra/livekit/livekit.yaml`](infra/livekit/livekit.yaml)) with
+   `LIVEKIT_KEYS="<your-key>: <your-secret>"`. In Coolify **Ports Mappings** add
    `7882:7882/udp`, `7881:7881`, and `5349:5349` (TURN/TLS), and open those ports in the
-   host firewall. Expose signaling (`7880`) via Traefik on a subdomain →
-   `wss://livekit.example.com`.
+   host firewall. Assign the `livekit` service a domain so Traefik proxies signaling
+   (`7880`) → `wss://livekit.example.com`.
 2. **token-server** — set `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` (matching the LiveKit
    keys). Keep it internal; the web app reaches it via `/api`.
 3. **web** — set `LIVEKIT_URL=wss://livekit.example.com` (must be `wss://` from an HTTPS
-   page). `config.js` is regenerated from this env var on container start.
+   page) and assign it the app domain. `config.js` is regenerated from this env var on
+   container start.
 
-Generate strong, unique `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` for production and drop
-`--dev`.
+Generate strong, unique `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` for production.
 
 ### TURN/TLS for clients behind strict firewalls
 
