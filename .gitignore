@@ -9,3 +9,6 @@ coverage/
 .idea/
 .vscode/
 *.tsbuildinfo
+
+# Eclipse Scout scoutkit-server: embedded H2 database files (runtime working dir)
+/services/scoutkit-server/data/

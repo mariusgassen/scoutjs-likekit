@@ -6,3 +6,6 @@ node_modules
 .env
 *.log
 coverage
+
+# Eclipse Scout scoutkit-server: embedded H2 runtime files
+services/scoutkit-server/data

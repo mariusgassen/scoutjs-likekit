@@ -1,21 +1,21 @@
 {
-  "name": "scoutjs-livekit-monorepo",
+  "name": "scoutkit",
   "version": "0.1.0",
   "private": true,
-  "description": "Reusable BSI Scout JS LiveKit meeting component (PoC) — monorepo",
+  "description": "ScoutKit — a Teams/Slack-like meeting tool (contacts, persistent chat, LiveKit video) on Eclipse Scout",
   "workspaces": [
     "packages/*",
     "apps/*",
     "services/*"
   ],
   "scripts": {
-    "build:lib": "npm run build --workspace=@bsi/scout-livekit",
-    "build:demo": "npm run build --workspace=demo",
-    "build:token": "npm run build --workspace=token-server",
-    "build": "npm run build:lib && npm run build:token && npm run build:demo",
-    "dev:lib": "npm run build:watch --workspace=@bsi/scout-livekit",
-    "dev:demo": "npm run dev --workspace=demo",
-    "dev:token": "npm run dev --workspace=token-server"
+    "build:lib": "npm run build --workspace=@scoutkit/livekit",
+    "build:web": "npm run build --workspace=web",
+    "build": "npm run build:lib && npm run build:web",
+    "dev:lib": "npm run build:watch --workspace=@scoutkit/livekit",
+    "dev:web": "npm run dev --workspace=web",
+    "build:server": "mvn -f services/scoutkit-server/pom.xml -B -DskipTests package",
+    "dev:server": "mvn -f services/scoutkit-server/pom.xml -B exec:java"
   },
   "engines": {
     "node": ">=24.12.0"

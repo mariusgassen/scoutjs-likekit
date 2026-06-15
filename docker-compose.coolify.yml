@@ -6,9 +6,9 @@
 # failed: port is already allocated") and bypasses Traefik.
 #
 # Here instead:
-#   - web & token-server are fronted by Coolify's Traefik via DOMAINS (no host ports).
-#     Set the domains in the Coolify UI: a domain for `web` (the app) and one for
-#     `livekit` signaling (-> wss://livekit.example.com).
+#   - scoutkit-server (web app + API in one container) is fronted by Coolify's Traefik via
+#     DOMAINS (no host ports). Set the domains in the Coolify UI: a domain for
+#     `scoutkit-server` (the app) and one for `livekit` signaling (-> wss://livekit.example.com).
 #   - LiveKit runs the PRODUCTION config (infra/livekit/livekit.yaml) with TURN/TLS,
 #     and publishes ONLY the media/TURN ports, which genuinely cannot go through Traefik.
 services:
@@ -23,7 +23,7 @@ services:
     environment:
       # The LiveKit *server* reads its key pair from LIVEKIT_KEYS in "<key>: <secret>"
       # form. We build it from the same LIVEKIT_API_KEY / LIVEKIT_API_SECRET the
-      # token-server uses (below), so you set just those two vars and both sides
+      # scoutkit-server uses (below), so you set just those two vars and both sides
       # automatically share one key pair. Do NOT also set LIVEKIT_KEYS yourself.
       LIVEKIT_KEYS: "${LIVEKIT_API_KEY}: ${LIVEKIT_API_SECRET}"
     # Signaling (7880) is proxied by Traefik via the `livekit` service domain — do NOT
@@ -53,33 +53,27 @@ services:
     #   - "traefik.tcp.routers.turn.service=turn"
     #   - "traefik.tcp.services.turn.loadbalancer.server.port=5349"
 
-  token-server:
+  # Eclipse Scout RT backend — serves BOTH the web app (/) and the REST API (/api).
+  # This is the only HTTP service: assign it the app domain in the Coolify UI and Traefik
+  # fronts it (no host port binding, which avoids the :8080 "port is already allocated" clash).
+  scoutkit-server:
     build:
       context: .
-      dockerfile: services/token-server/Dockerfile
+      dockerfile: services/scoutkit-server/Dockerfile
     environment:
       LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
       LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
-      PORT: 3001
-    # Internal only — the web app's nginx proxies /api/ to this service by name.
+      # Browser-facing signaling URL — must be wss:// from an HTTPS page.
+      LIVEKIT_URL: ${LIVEKIT_URL}
+    # Chat history + conversations persist on this volume across redeploys.
+    volumes:
+      - scoutkit-data:/data
+    # Fronted by Traefik via the service domain — Coolify discovers the container port.
     expose:
-      - "3001"
+      - "8080"
     depends_on:
       - livekit
     restart: unless-stopped
 
-  web:
-    build:
-      context: .
-      dockerfile: apps/demo/Dockerfile
-    environment:
-      # Browser-facing signaling URL — must be wss:// from an HTTPS page.
-      LIVEKIT_URL: ${LIVEKIT_URL}
-    # Fronted by Traefik via the `web` service domain — no host port binding (this is
-    # what fixes the :8080 "port is already allocated" failure).
-    expose:
-      - "80"
-    depends_on:
-      - token-server
-      - livekit
-    restart: unless-stopped
+volumes:
+  scoutkit-data:
