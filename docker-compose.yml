@@ -21,11 +21,11 @@ services:
       POSTGRES_DB: scoutkit
       POSTGRES_USER: scoutkit
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-scoutkit}
-      # PostgreSQL 18's image moved the default data dir to /var/lib/postgresql/18/docker.
-      # Pin it back to the volume mount path below so data keeps persisting on scoutkit-db.
-      PGDATA: /var/lib/postgresql/data
     volumes:
-      - scoutkit-db:/var/lib/postgresql/data
+      # PostgreSQL 18's image moved its default data dir to /var/lib/postgresql/18/docker.
+      # Mount the parent /var/lib/postgresql so the volume covers the new layout (and any
+      # future major-version subdir). Old PG<=17 stacks mounted .../data instead.
+      - scoutkit-db:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U scoutkit -d scoutkit"]
       interval: 5s
