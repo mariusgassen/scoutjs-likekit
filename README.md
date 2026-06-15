@@ -5,7 +5,7 @@ A **Teams/Slack-like meeting tool** built on **Eclipse Scout**: a contact direct
 video meetings — backed by a real **Eclipse Scout RT Java server** with database
 persistence. Deployable with **docker-compose** and **Coolify**.
 
-The reusable video widget ([`packages/scout-livekit`](packages/scout-livekit)) bridges the
+The reusable video widget ([`packages/livekit`](packages/livekit)) bridges the
 vanilla [`livekit-client`](https://github.com/livekit/client-sdk-js) SDK into a custom Scout
 `Widget` (Scout JS is *not* React).
 
@@ -17,11 +17,11 @@ one container is the public entry point; only LiveKit's media ports sit beside i
 
 ```
 Browser ── http ──►  meeting-server (Eclipse Scout RT, Java; embedded Jetty)
-  Scout JS app          ├─ /            static web app (apps/demo, built)
+  Scout JS app          ├─ /            static web app (apps/web, built)
   contacts ·            ├─ /api/*       token · contacts · conversations · messages
   conversations ·       │                 ├─ LiveKit JWTs (HS256, java-jwt)
   persistent chat       │                 └─ H2 database (contacts, chats — persisted)
-  └─ LiveKitMeeting widget (@bsi/scout-livekit)
+  └─ LiveKitMeeting widget (@scoutkit/livekit)
         └─ wss signaling + UDP media ─►  livekit-server (self-hosted)
 ```
 
@@ -33,8 +33,8 @@ LiveKit room name.
 
 | Path | What |
 |------|------|
-| `packages/scout-livekit` | Reusable `@bsi/scout-livekit` Scout JS widget (`LiveKitMeeting`). Built with `tsc` to ESM. |
-| `apps/demo` | Scout JS workspace app (`ChatWorkspace`): contacts, conversations, persistent chat, docked calls. Built with `scout-scripts`; the `meeting-server` serves the result. |
+| `packages/livekit` | Reusable `@scoutkit/livekit` Scout JS widget (`LiveKitMeeting`). Built with `tsc` to ESM. |
+| `apps/web` | Scout JS workspace app (`ChatWorkspace`): contacts, conversations, persistent chat, docked calls. Built with `scout-scripts`; the `meeting-server` serves the result. |
 | `services/meeting-server` | **Eclipse Scout RT 26.1 Java backend** (embedded Jetty). Serves the built web app at `/` and the REST API at `/api` (Jersey), mints LiveKit tokens, and persists contacts/conversations/messages in embedded **H2**. Built with Maven. |
 | `infra/livekit/livekit.yaml` | Production LiveKit server config (ports + external IP). |
 | `docker-compose.yml` | Full stack: `livekit` + `meeting-server` (web app + API). |
@@ -90,7 +90,7 @@ meeting, and the mic/camera/screen-share/Leave controls in the call.
 
 ```bash
 npm install
-npm run build:lib                 # compile @bsi/scout-livekit
+npm run build:lib                 # compile @scoutkit/livekit
 
 # terminal 1 — LiveKit (requires the livekit-server binary or its Docker image)
 livekit-server --dev
@@ -98,18 +98,18 @@ livekit-server --dev
 # terminal 2 — Scout Java backend (embedded Jetty on :8080, embedded H2 under ./data)
 npm run dev:server                # = mvn -f services/meeting-server/pom.xml exec:java
 
-# terminal 3 — Scout web app, watch build (rebuilds apps/demo/target/site on change)
-npm run dev:demo
+# terminal 3 — Scout web app, watch build (rebuilds apps/web/target/site on change)
+npm run dev:web
 ```
 
 Two ways to view the UI:
 
-- **All-in-one** — build the web app (`npm run build:demo`) and have the Scout server also
+- **All-in-one** — build the web app (`npm run build:web`) and have the Scout server also
   serve it by pointing `meeting.web.root` at the built site, then open <http://localhost:8080>:
   ```bash
-  mvn -f services/meeting-server/pom.xml exec:java -Dmeeting.web.root=apps/demo/target/site
+  mvn -f services/meeting-server/pom.xml exec:java -Dmeeting.web.root=apps/web/target/site
   ```
-- **Separate dev server** — serve `apps/demo/target/site` with any static server. It calls the
+- **Separate dev server** — serve `apps/web/target/site` with any static server. It calls the
   backend at `/api` (same-origin); when the dev server is on a different origin than `:8080`,
   point it at the backend with `window.APP_CONFIG.apiBase` (the `meeting-server` enables
   permissive CORS for this).
@@ -119,7 +119,7 @@ Two ways to view the UI:
 ## Using the component in your own Scout app
 
 ```ts
-import {LiveKitMeeting} from '@bsi/scout-livekit';
+import {LiveKitMeeting} from '@scoutkit/livekit';
 
 const meeting = scout.create(LiveKitMeeting, {
   parent: this,
@@ -134,7 +134,7 @@ const meeting = scout.create(LiveKitMeeting, {
 
 `@eclipse-scout/core` is a **peer dependency** — only the host app provides Scout core
 (a second copy would break the object registry). See
-[`packages/scout-livekit/README.md`](packages/scout-livekit/README.md).
+[`packages/livekit/README.md`](packages/livekit/README.md).
 
 ## Production / Coolify deployment
 
@@ -215,6 +215,6 @@ firewall-friendly.
 | `npm install` | Install the JS workspaces. |
 | `npm run build` | Build the library and the demo web app (+ static site). |
 | `npm run build:lib` / `:demo` | Build a single JS workspace. |
-| `npm run dev:demo` | Scout watch build of the web app. |
+| `npm run dev:web` | Scout watch build of the web app. |
 | `npm run build:server` | Build the Scout Java backend (`mvn … package`). |
 | `npm run dev:server` | Run the Scout Java backend (embedded Jetty + H2). |

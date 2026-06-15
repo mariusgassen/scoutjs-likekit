@@ -6,8 +6,8 @@ FROM node:24-alpine AS web
 WORKDIR /repo
 COPY . .
 RUN npm install
-RUN npm run build:lib && npm run build:demo
-# produces apps/demo/target/site
+RUN npm run build:lib && npm run build:web
+# produces apps/web/target/site
 
 # --- Java build stage ------------------------------------------------------
 FROM maven:3.9-eclipse-temurin-21 AS build
@@ -26,7 +26,7 @@ WORKDIR /app
 COPY --from=build /build/target/meeting-server.jar ./meeting-server.jar
 COPY --from=build /build/target/dependency ./dependency
 # The built web app served at / (StaticResourceServlet, meeting.web.root=/app/web).
-COPY --from=web /repo/apps/demo/target/site ./web
+COPY --from=web /repo/apps/web/target/site ./web
 COPY services/meeting-server/docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh && mkdir -p /data
 EXPOSE 8080
