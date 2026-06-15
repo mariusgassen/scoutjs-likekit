@@ -8,7 +8,7 @@
   <artifactId>meeting-server</artifactId>
   <version>0.1.0</version>
   <packaging>jar</packaging>
-  <name>scoutjs-likekit meeting-server</name>
+  <name>ScoutKit meeting-server</name>
   <description>Eclipse Scout RT backend: LiveKit token minting, contacts and persistent chat (H2).</description>
 
   <properties>

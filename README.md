@@ -1,4 +1,4 @@
-# scoutjs-likekit
+# ScoutKit
 
 A **Teams/Slack-like meeting tool** built on **Eclipse Scout**: a contact directory,
 **persistent chat** (DMs + group/meeting rooms) that outlives calls, and **LiveKit**

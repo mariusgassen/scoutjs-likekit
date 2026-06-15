@@ -9,7 +9,7 @@ export class MainForm extends Form {
 
   protected override _jsonModel(): FormModel {
     return {
-      title: 'Scout Meet',
+      title: 'ScoutKit',
       rootGroupBox: {
         objectType: GroupBox,
         gridColumnCount: 1,

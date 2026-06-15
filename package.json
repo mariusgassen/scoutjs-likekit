@@ -1,8 +1,8 @@
 {
-  "name": "scoutjs-livekit-monorepo",
+  "name": "scoutkit",
   "version": "0.1.0",
   "private": true,
-  "description": "Reusable BSI Scout JS LiveKit meeting component (PoC) — monorepo",
+  "description": "ScoutKit — a Teams/Slack-like meeting tool (contacts, persistent chat, LiveKit video) on Eclipse Scout",
   "workspaces": [
     "packages/*",
     "apps/*",

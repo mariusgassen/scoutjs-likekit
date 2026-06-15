@@ -2,8 +2,8 @@ import {HtmlComponent, InitModelOf, scout, Widget} from '@eclipse-scout/core';
 import {LiveKitMeeting} from '@bsi/scout-livekit';
 import {Contact, Conversation, MeetingApi, Message} from './MeetingApi';
 
-const NAME_KEY = 'scoutjs-likekit.name';
-const ID_KEY = 'scoutjs-likekit.id';
+const NAME_KEY = 'scoutkit.name';
+const ID_KEY = 'scoutkit.id';
 const POLL_MS = 2500;
 
 /**
@@ -74,7 +74,7 @@ export class ChatWorkspace extends Widget {
 
     const $brand = this.$rail.appendDiv('cw-brand');
     $brand.appendDiv('cw-brand-mark').text('◆');
-    $brand.appendDiv('cw-brand-name').text('Scout Meet');
+    $brand.appendDiv('cw-brand-name').text('ScoutKit');
 
     const $identity = this.$rail.appendDiv('cw-identity');
     $identity.appendDiv('cw-identity-label').text('You');

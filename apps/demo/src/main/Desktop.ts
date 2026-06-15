@@ -5,7 +5,7 @@ export class Desktop extends ScoutDesktop {
 
   protected override _jsonModel(): object {
     return {
-      title: 'Scout Meet · LiveKit',
+      title: 'ScoutKit',
       displayStyle: ScoutDesktop.DisplayStyle.BENCH
     };
   }
