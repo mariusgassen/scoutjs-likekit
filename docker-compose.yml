@@ -13,8 +13,25 @@ services:
       - "7882:7882/udp"    # media (UDP mux)
     restart: unless-stopped
 
+  # PostgreSQL — the real database. Holds contacts, conversations and persistent chat (incl. the
+  # full-text search index). Data survives restarts on the scoutkit-db volume.
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: scoutkit
+      POSTGRES_USER: scoutkit
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-scoutkit}
+    volumes:
+      - scoutkit-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scoutkit -d scoutkit"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
   # Eclipse Scout RT backend. Serves the Scout JS web app at / and the REST API at /api
-  # (LiveKit tokens + contacts + persistent chat). H2 database persists on a volume.
+  # (LiveKit tokens + contacts + persistent chat). Schema is owned by Flyway, queried via jOOQ.
   scoutkit-server:
     build:
       context: .
@@ -24,13 +41,17 @@ services:
       LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
       # Browser-facing LiveKit URL (see .env). Local: ws://localhost:7880
       LIVEKIT_URL: ${LIVEKIT_URL}
-    volumes:
-      - scoutkit-data:/data
+      MEETING_DB_URL: jdbc:postgresql://postgres:5432/scoutkit
+      MEETING_DB_USER: scoutkit
+      MEETING_DB_PASSWORD: ${POSTGRES_PASSWORD:-scoutkit}
     ports:
       - "8080:8080"        # the single public entry point: web app + API
     depends_on:
-      - livekit
+      livekit:
+        condition: service_started
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
-  scoutkit-data:
+  scoutkit-db:

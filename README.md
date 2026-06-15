@@ -18,10 +18,10 @@ one container is the public entry point; only LiveKit's media ports sit beside i
 ```
 Browser ── http ──►  scoutkit-server (Eclipse Scout RT, Java; embedded Jetty)
   Scout JS app          ├─ /            static web app (apps/web, built)
-  contacts ·            ├─ /api/*       token · contacts · conversations · messages
+  contacts ·            ├─ /api/*       token · contacts · conversations · messages · search
   conversations ·       │                 ├─ LiveKit JWTs (HS256, java-jwt)
-  persistent chat       │                 └─ H2 database (contacts, chats — persisted)
-  └─ LiveKitMeeting widget (@scoutkit/livekit)
+  persistent chat       │                 └─ PostgreSQL via jOOQ (Flyway schema; FTS search)
+  search                └─ LiveKitMeeting widget (@scoutkit/livekit)
         └─ wss signaling + UDP media ─►  livekit-server (self-hosted)
 ```
 
@@ -29,13 +29,25 @@ Chat history lives in the database, independent of any call, so it persists acro
 and outlives the call — including multi-person meetings. A conversation id doubles as the
 LiveKit room name.
 
+### Persistence — PostgreSQL + jOOQ + Flyway
+
+The real database is **PostgreSQL**. The backend talks to it with **jOOQ** (type-safe SQL over a
+**HikariCP** pool), and **Flyway** owns the schema (migrations in
+[`services/scoutkit-server/src/main/resources/db/migration`](services/scoutkit-server/src/main/resources/db/migration)).
+jOOQ's classes are generated **at build time from the Flyway migration DDL** (jOOQ `DDLDatabase`),
+so the build needs no running database.
+
+**Full-text message search** is the headline database feature: a PostgreSQL `tsvector` column
+(stored + GIN-indexed) is queried with `websearch_to_tsquery` / `ts_rank` / `ts_headline`, exposed
+at `GET /api/search?q=` and surfaced as a **Search** page in the UI (with highlighted snippets).
+
 ## Monorepo layout
 
 | Path | What |
 |------|------|
 | `packages/livekit` | Reusable `@scoutkit/livekit` Scout JS widget (`LiveKitMeeting`). Built with `tsc` to ESM. |
 | `apps/web` | Scout JS workspace app: an outline-based desktop (navigation + bench) with Conversations and Contacts table pages whose detail form is the chat (persistent messages + docked LiveKit call). Built with `scout-scripts`; the `scoutkit-server` serves the result. See [`apps/web/README.md`](apps/web/README.md) for the outline structure. |
-| `services/scoutkit-server` | **Eclipse Scout RT 26.1 Java backend** (embedded Jetty). Serves the built web app at `/` and the REST API at `/api` (Jersey), mints LiveKit tokens, and persists contacts/conversations/messages in embedded **H2**. Built with Maven. |
+| `services/scoutkit-server` | **Eclipse Scout RT 26.1 Java backend** (embedded Jetty). Serves the built web app at `/` and the REST API at `/api` (Jersey), mints LiveKit tokens, and persists contacts/conversations/messages in **PostgreSQL** via **jOOQ** (schema migrated by **Flyway**). Built with Maven. |
 | `infra/livekit/livekit.yaml` | Production LiveKit server config (ports + external IP). |
 | `docker-compose.yml` | Full stack: `livekit` + `scoutkit-server` (web app + API). |
 
@@ -49,31 +61,36 @@ Anonymous access; unsafe methods require an `X-Requested-With` header (Scout ant
 | `GET /api/contacts` | Workspace contact directory. |
 | `GET` / `POST /api/conversations` | List / create DMs and group/meeting chats. |
 | `GET` / `POST /api/conversations/{id}/messages` | Persistent chat history (`?after=<ts>` to poll). |
+| `GET /api/search?q=&limit=` | Full-text message search (PostgreSQL FTS; ranked, highlighted). |
 
 ## Features
 
 Contact directory, direct messages and group/meeting rooms, server-persisted chat that
-survives reloads and outlives calls, multi-participant video/audio grid with a floating
+survives reloads and outlives calls, **full-text message search** across all conversations
+(PostgreSQL FTS with highlighted snippets), multi-participant video/audio grid with a floating
 self-view, mic/camera toggle, screen sharing, and shareable invite links (`?c=<conversation>`).
 
 ## Requirements
 
 - **Node.js ≥ 24.12** (required by Eclipse Scout 26.x) and npm — for the web app.
 - **JDK 21** and **Maven** — for the `scoutkit-server` backend.
+- **PostgreSQL** (the runtime database; the build itself needs none — jOOQ generates from the
+  Flyway DDL). Easiest via Docker, or use the `postgres` service in docker-compose.
 - Docker + Docker Compose for the containerised stack.
 
 ## Quick start (local, docker-compose)
 
 ```bash
 cp .env.example .env          # defaults match LiveKit's --dev key pair
-docker compose up --build     # livekit :7880/:7881/:7882udp, scoutkit-server :8080 (web app + API)
+docker compose up --build     # postgres, livekit :7880/:7881/:7882udp, scoutkit-server :8080
 ```
 
 Open <http://localhost:8080> in **two browser tabs**:
 
 1. Set your name in the left rail (e.g. `Alice` / `Bob`).
 2. Both tabs open the **General** conversation — type messages and watch them sync; the
-   history persists (it's stored in the backend H2 database), even after a reload.
+   history persists (it's stored in the backend PostgreSQL database), even after a reload.
+   Open the **Search** page in the navigation to full-text search across all conversations.
 3. Click **Start call** to bring up the LiveKit video meeting docked above the chat; the
    chat keeps working during and after the call.
 
@@ -92,13 +109,18 @@ meeting, and the mic/camera/screen-share/Leave controls in the call.
 npm install
 npm run build:lib                 # compile @scoutkit/livekit
 
-# terminal 1 — LiveKit (requires the livekit-server binary or its Docker image)
+# terminal 1 — PostgreSQL (the real database; Flyway migrates it on first server start)
+docker run --rm -p 5432:5432 \
+  -e POSTGRES_USER=scoutkit -e POSTGRES_PASSWORD=scoutkit -e POSTGRES_DB=scoutkit \
+  postgres:16-alpine
+
+# terminal 2 — LiveKit (requires the livekit-server binary or its Docker image)
 livekit-server --dev
 
-# terminal 2 — Scout Java backend (embedded Jetty on :8080, embedded H2 under ./data)
+# terminal 3 — Scout Java backend (embedded Jetty on :8080, connects to PostgreSQL above)
 npm run dev:server                # = mvn -f services/scoutkit-server/pom.xml exec:java
 
-# terminal 3 — Scout web app, watch build (rebuilds apps/web/target/site on change)
+# terminal 4 — Scout web app, watch build (rebuilds apps/web/target/site on change)
 npm run dev:web
 ```
 
@@ -146,8 +168,8 @@ proxy (HTTPS via Let's Encrypt). WebRTC media (UDP) **cannot** go through Traefi
 > `:8080`, which collides with Coolify on the VPS (`Bind for 0.0.0.0:8080 failed: port is
 > already allocated`) and runs LiveKit in `--dev`. The Coolify compose fronts `scoutkit-server`
 > with Traefik (assign it the app domain in the Coolify UI — no host ports) and publishes only
-> LiveKit's media/TURN ports. The `scoutkit-server`'s H2 database lives on the `scoutkit-data`
-> volume, so chat history survives redeploys.
+> LiveKit's media/TURN ports. PostgreSQL runs as an internal `postgres` service whose data lives
+> on the `scoutkit-db` volume, so chat history survives redeploys (set `POSTGRES_PASSWORD`).
 
 1. **LiveKit server** — built from [`infra/livekit/Dockerfile`](infra/livekit/Dockerfile),
    which **bakes** [`infra/livekit/livekit.yaml`](infra/livekit/livekit.yaml) into the
@@ -217,4 +239,4 @@ firewall-friendly.
 | `npm run build:lib` / `:demo` | Build a single JS workspace. |
 | `npm run dev:web` | Scout watch build of the web app. |
 | `npm run build:server` | Build the Scout Java backend (`mvn … package`). |
-| `npm run dev:server` | Run the Scout Java backend (embedded Jetty + H2). |
+| `npm run dev:server` | Run the Scout Java backend (embedded Jetty; connects to PostgreSQL). |

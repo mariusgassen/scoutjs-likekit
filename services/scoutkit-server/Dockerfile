@@ -28,6 +28,6 @@ COPY --from=build /build/target/dependency ./dependency
 # The built web app served at / (StaticResourceServlet, meeting.web.root=/app/web).
 COPY --from=web /repo/apps/web/target/site ./web
 COPY services/scoutkit-server/docker-entrypoint.sh ./docker-entrypoint.sh
-RUN chmod +x ./docker-entrypoint.sh && mkdir -p /data
+RUN chmod +x ./docker-entrypoint.sh
 EXPOSE 8080
 ENTRYPOINT ["./docker-entrypoint.sh"]

@@ -53,6 +53,23 @@ services:
     #   - "traefik.tcp.routers.turn.service=turn"
     #   - "traefik.tcp.services.turn.loadbalancer.server.port=5349"
 
+  # PostgreSQL — the real database. Internal only (no host ports, not fronted by Traefik).
+  # Chat history + conversations persist on the scoutkit-db volume across redeploys.
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: scoutkit
+      POSTGRES_USER: scoutkit
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - scoutkit-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scoutkit -d scoutkit"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
   # Eclipse Scout RT backend — serves BOTH the web app (/) and the REST API (/api).
   # This is the only HTTP service: assign it the app domain in the Coolify UI and Traefik
   # fronts it (no host port binding, which avoids the :8080 "port is already allocated" clash).
@@ -65,15 +82,18 @@ services:
       LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
       # Browser-facing signaling URL — must be wss:// from an HTTPS page.
       LIVEKIT_URL: ${LIVEKIT_URL}
-    # Chat history + conversations persist on this volume across redeploys.
-    volumes:
-      - scoutkit-data:/data
+      MEETING_DB_URL: jdbc:postgresql://postgres:5432/scoutkit
+      MEETING_DB_USER: scoutkit
+      MEETING_DB_PASSWORD: ${POSTGRES_PASSWORD}
     # Fronted by Traefik via the service domain — Coolify discovers the container port.
     expose:
       - "8080"
     depends_on:
-      - livekit
+      livekit:
+        condition: service_started
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
-  scoutkit-data:
+  scoutkit-db:

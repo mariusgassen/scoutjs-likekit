@@ -33,6 +33,19 @@ export interface NewConversation {
   memberIds: string[];
 }
 
+/** A full-text search hit: a matching message plus enough of its conversation to navigate to it. */
+export interface MessageHit {
+  messageId: string;
+  conversationId: string;
+  conversationTitle: string;
+  conversationType: 'direct' | 'group';
+  memberCount: number;
+  author: string;
+  /** A highlighted excerpt; matching terms are wrapped in `[..]` (PostgreSQL `ts_headline`). */
+  snippet: string;
+  ts: number;
+}
+
 /**
  * Thin fetch wrapper. Unsafe methods send the `X-Requested-With` header the Scout
  * {@code AntiCsrfContainerFilter} requires.
@@ -71,6 +84,11 @@ export class MeetingApi {
 
   postMessage(conversationId: string, author: string, text: string): Promise<Message> {
     return this._send('POST', `/conversations/${encodeURIComponent(conversationId)}/messages`, {author, text});
+  }
+
+  /** PostgreSQL full-text search across all messages (`websearch_to_tsquery` syntax). */
+  searchMessages(query: string, limit = 30): Promise<MessageHit[]> {
+    return this._get(`/search?q=${encodeURIComponent(query)}&limit=${limit}`);
   }
 
   protected async _get<T>(path: string): Promise<T> {
