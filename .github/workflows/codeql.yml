@@ -32,15 +32,15 @@ jobs:
             # Manual: the Maven module lives under services/, so we drive the build explicitly.
             build-mode: manual
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - if: matrix.language == 'java-kotlin'
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: '25'
           cache: maven
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
@@ -49,6 +49,6 @@ jobs:
         name: Build Java for analysis
         run: mvn -B -ntp -f services/scoutkit-server/pom.xml -DskipTests package
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           category: /language:${{ matrix.language }}
