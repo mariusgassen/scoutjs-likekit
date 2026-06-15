@@ -61,6 +61,9 @@ services:
       POSTGRES_DB: scoutkit
       POSTGRES_USER: scoutkit
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      # PostgreSQL 18's image moved the default data dir to /var/lib/postgresql/18/docker.
+      # Pin it back to the volume mount path below so data keeps persisting on scoutkit-db.
+      PGDATA: /var/lib/postgresql/data
     volumes:
       - scoutkit-db:/var/lib/postgresql/data
     healthcheck:
