@@ -24,6 +24,7 @@ export class SearchTablePage extends PageWithTable {
     return scout.create(Table, {
       parent: this.outline,
       headerVisible: true,
+      autoResizeColumns: true,
       columns: [
         {id: 'messageId', objectType: Column, visible: false},
         {id: 'conversation', objectType: Column, text: 'Conversation', width: 180},
