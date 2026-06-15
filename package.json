@@ -14,8 +14,8 @@
     "build": "npm run build:lib && npm run build:web",
     "dev:lib": "npm run build:watch --workspace=@scoutkit/livekit",
     "dev:web": "npm run dev --workspace=web",
-    "build:server": "mvn -f services/meeting-server/pom.xml -B -DskipTests package",
-    "dev:server": "mvn -f services/meeting-server/pom.xml -B exec:java"
+    "build:server": "mvn -f services/scoutkit-server/pom.xml -B -DskipTests package",
+    "dev:server": "mvn -f services/scoutkit-server/pom.xml -B exec:java"
   },
   "engines": {
     "node": ">=24.12.0"

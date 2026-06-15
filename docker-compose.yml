@@ -1,4 +1,4 @@
-# PoC stack: LiveKit media server + the Scout meeting-server (which serves both the web app
+# PoC stack: LiveKit media server + the Scout scoutkit-server (which serves both the web app
 # and the REST API). Copy .env.example to .env first.
 services:
   livekit:
@@ -15,17 +15,17 @@ services:
 
   # Eclipse Scout RT backend. Serves the Scout JS web app at / and the REST API at /api
   # (LiveKit tokens + contacts + persistent chat). H2 database persists on a volume.
-  meeting-server:
+  scoutkit-server:
     build:
       context: .
-      dockerfile: services/meeting-server/Dockerfile
+      dockerfile: services/scoutkit-server/Dockerfile
     environment:
       LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
       LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
       # Browser-facing LiveKit URL (see .env). Local: ws://localhost:7880
       LIVEKIT_URL: ${LIVEKIT_URL}
     volumes:
-      - meeting-data:/data
+      - scoutkit-data:/data
     ports:
       - "8080:8080"        # the single public entry point: web app + API
     depends_on:
@@ -33,4 +33,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  meeting-data:
+  scoutkit-data:

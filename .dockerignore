@@ -7,5 +7,5 @@ node_modules
 *.log
 coverage
 
-# Eclipse Scout meeting-server: embedded H2 runtime files
-services/meeting-server/data
+# Eclipse Scout scoutkit-server: embedded H2 runtime files
+services/scoutkit-server/data

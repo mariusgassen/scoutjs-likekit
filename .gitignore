@@ -10,5 +10,5 @@ coverage/
 .vscode/
 *.tsbuildinfo
 
-# Eclipse Scout meeting-server: embedded H2 database files (runtime working dir)
-/services/meeting-server/data/
+# Eclipse Scout scoutkit-server: embedded H2 database files (runtime working dir)
+/services/scoutkit-server/data/

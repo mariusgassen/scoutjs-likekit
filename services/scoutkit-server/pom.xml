@@ -5,10 +5,10 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.scoutkit</groupId>
-  <artifactId>meeting-server</artifactId>
+  <artifactId>scoutkit-server</artifactId>
   <version>0.1.0</version>
   <packaging>jar</packaging>
-  <name>ScoutKit meeting-server</name>
+  <name>ScoutKit server</name>
   <description>Eclipse Scout RT backend: LiveKit token minting, contacts and persistent chat (H2).</description>
 
   <properties>
@@ -98,7 +98,7 @@
   </dependencies>
 
   <build>
-    <finalName>meeting-server</finalName>
+    <finalName>scoutkit-server</finalName>
     <plugins>
       <!-- Generate the Jandex index Scout uses to discover beans in this module. -->
       <plugin>
@@ -116,7 +116,7 @@
       </plugin>
 
       <!-- Copy runtime dependencies next to the jar so the Docker image can run
-           `java -cp meeting-server.jar:dependency/*` while preserving each jar's
+           `java -cp scoutkit-server.jar:dependency/*` while preserving each jar's
            own Jandex index (a shaded uber-jar would collapse those indexes). -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

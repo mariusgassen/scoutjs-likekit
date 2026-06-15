@@ -11,12 +11,12 @@ vanilla [`livekit-client`](https://github.com/livekit/client-sdk-js) SDK into a 
 
 ## Architecture
 
-The Scout `meeting-server` is a single HTTP service that serves **both** the web app (`/`) and
+The Scout `scoutkit-server` is a single HTTP service that serves **both** the web app (`/`) and
 the REST API (`/api/*`) — no separate nginx. The browser isn't on the docker network, so this
 one container is the public entry point; only LiveKit's media ports sit beside it.
 
 ```
-Browser ── http ──►  meeting-server (Eclipse Scout RT, Java; embedded Jetty)
+Browser ── http ──►  scoutkit-server (Eclipse Scout RT, Java; embedded Jetty)
   Scout JS app          ├─ /            static web app (apps/web, built)
   contacts ·            ├─ /api/*       token · contacts · conversations · messages
   conversations ·       │                 ├─ LiveKit JWTs (HS256, java-jwt)
@@ -34,12 +34,12 @@ LiveKit room name.
 | Path | What |
 |------|------|
 | `packages/livekit` | Reusable `@scoutkit/livekit` Scout JS widget (`LiveKitMeeting`). Built with `tsc` to ESM. |
-| `apps/web` | Scout JS workspace app (`ChatWorkspace`): contacts, conversations, persistent chat, docked calls. Built with `scout-scripts`; the `meeting-server` serves the result. |
-| `services/meeting-server` | **Eclipse Scout RT 26.1 Java backend** (embedded Jetty). Serves the built web app at `/` and the REST API at `/api` (Jersey), mints LiveKit tokens, and persists contacts/conversations/messages in embedded **H2**. Built with Maven. |
+| `apps/web` | Scout JS workspace app (`ChatWorkspace`): contacts, conversations, persistent chat, docked calls. Built with `scout-scripts`; the `scoutkit-server` serves the result. |
+| `services/scoutkit-server` | **Eclipse Scout RT 26.1 Java backend** (embedded Jetty). Serves the built web app at `/` and the REST API at `/api` (Jersey), mints LiveKit tokens, and persists contacts/conversations/messages in embedded **H2**. Built with Maven. |
 | `infra/livekit/livekit.yaml` | Production LiveKit server config (ports + external IP). |
-| `docker-compose.yml` | Full stack: `livekit` + `meeting-server` (web app + API). |
+| `docker-compose.yml` | Full stack: `livekit` + `scoutkit-server` (web app + API). |
 
-### REST API (`meeting-server`, served at `/api`)
+### REST API (`scoutkit-server`, served at `/api`)
 
 Anonymous access; unsafe methods require an `X-Requested-With` header (Scout anti-CSRF).
 
@@ -59,14 +59,14 @@ self-view, mic/camera toggle, screen sharing, and shareable invite links (`?c=<c
 ## Requirements
 
 - **Node.js ≥ 24.12** (required by Eclipse Scout 26.x) and npm — for the web app.
-- **JDK 21** and **Maven** — for the `meeting-server` backend.
+- **JDK 21** and **Maven** — for the `scoutkit-server` backend.
 - Docker + Docker Compose for the containerised stack.
 
 ## Quick start (local, docker-compose)
 
 ```bash
 cp .env.example .env          # defaults match LiveKit's --dev key pair
-docker compose up --build     # livekit :7880/:7881/:7882udp, meeting-server :8080 (web app + API)
+docker compose up --build     # livekit :7880/:7881/:7882udp, scoutkit-server :8080 (web app + API)
 ```
 
 Open <http://localhost:8080> in **two browser tabs**:
@@ -96,7 +96,7 @@ npm run build:lib                 # compile @scoutkit/livekit
 livekit-server --dev
 
 # terminal 2 — Scout Java backend (embedded Jetty on :8080, embedded H2 under ./data)
-npm run dev:server                # = mvn -f services/meeting-server/pom.xml exec:java
+npm run dev:server                # = mvn -f services/scoutkit-server/pom.xml exec:java
 
 # terminal 3 — Scout web app, watch build (rebuilds apps/web/target/site on change)
 npm run dev:web
@@ -107,11 +107,11 @@ Two ways to view the UI:
 - **All-in-one** — build the web app (`npm run build:web`) and have the Scout server also
   serve it by pointing `meeting.web.root` at the built site, then open <http://localhost:8080>:
   ```bash
-  mvn -f services/meeting-server/pom.xml exec:java -Dmeeting.web.root=apps/web/target/site
+  mvn -f services/scoutkit-server/pom.xml exec:java -Dmeeting.web.root=apps/web/target/site
   ```
 - **Separate dev server** — serve `apps/web/target/site` with any static server. It calls the
   backend at `/api` (same-origin); when the dev server is on a different origin than `:8080`,
-  point it at the backend with `window.APP_CONFIG.apiBase` (the `meeting-server` enables
+  point it at the backend with `window.APP_CONFIG.apiBase` (the `scoutkit-server` enables
   permissive CORS for this).
 
 `npm run dev:lib` rebuilds the library on change.
@@ -138,15 +138,15 @@ const meeting = scout.create(LiveKitMeeting, {
 
 ## Production / Coolify deployment
 
-The `meeting-server` (web app + API) and LiveKit signaling sit behind Coolify's **Traefik**
+The `scoutkit-server` (web app + API) and LiveKit signaling sit behind Coolify's **Traefik**
 proxy (HTTPS via Let's Encrypt). WebRTC media (UDP) **cannot** go through Traefik.
 
 > **Use [`docker-compose.coolify.yml`](docker-compose.coolify.yml), not the root
-> `docker-compose.yml`.** The root file is for local dev — it host-binds `meeting-server` on
+> `docker-compose.yml`.** The root file is for local dev — it host-binds `scoutkit-server` on
 > `:8080`, which collides with Coolify on the VPS (`Bind for 0.0.0.0:8080 failed: port is
-> already allocated`) and runs LiveKit in `--dev`. The Coolify compose fronts `meeting-server`
+> already allocated`) and runs LiveKit in `--dev`. The Coolify compose fronts `scoutkit-server`
 > with Traefik (assign it the app domain in the Coolify UI — no host ports) and publishes only
-> LiveKit's media/TURN ports. The `meeting-server`'s H2 database lives on the `meeting-data`
+> LiveKit's media/TURN ports. The `scoutkit-server`'s H2 database lives on the `scoutkit-data`
 > volume, so chat history survives redeploys.
 
 1. **LiveKit server** — built from [`infra/livekit/Dockerfile`](infra/livekit/Dockerfile),
@@ -157,10 +157,10 @@ proxy (HTTPS via Let's Encrypt). WebRTC media (UDP) **cannot** go through Traefi
    host firewall. Assign the `livekit` service a domain so Traefik proxies signaling
    (`7880`) → `wss://livekit.example.com`.
 2. **Keys** — set **only** `LIVEKIT_API_KEY` and `LIVEKIT_API_SECRET` (one shared pair).
-   The meeting-server reads them directly (to mint tokens); the LiveKit server needs them in
+   The scoutkit-server reads them directly (to mint tokens); the LiveKit server needs them in
    `LIVEKIT_KEYS` (`"<key>: <secret>"`) form, which the compose derives for you from those two
    vars — so don't set `LIVEKIT_KEYS` yourself.
-3. **meeting-server** — set `LIVEKIT_URL=wss://livekit.example.com` (must be `wss://` from an
+3. **scoutkit-server** — set `LIVEKIT_URL=wss://livekit.example.com` (must be `wss://` from an
    HTTPS page) and assign it the app domain. The browser `config.js` is regenerated from this
    env var on container start.
 

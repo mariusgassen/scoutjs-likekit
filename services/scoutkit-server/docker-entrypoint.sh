@@ -20,5 +20,5 @@ exec java \
   -Dmeeting.db.url="${MEETING_DB_URL:-jdbc:h2:file:/data/meeting;AUTO_SERVER=TRUE}" \
   -Dmeeting.web.root="${MEETING_WEB_ROOT:-/app/web}" \
   -Dscout.app.port="${SCOUT_APP_PORT:-8080}" \
-  -cp "meeting-server.jar:dependency/*" \
+  -cp "scoutkit-server.jar:dependency/*" \
   org.eclipse.scout.rt.app.Application

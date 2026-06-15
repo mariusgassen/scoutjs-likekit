@@ -37,7 +37,8 @@ leave) and a data-channel text chat. It emits `joined`, `left` and `error` event
 ### Token endpoint
 
 `tokenUrl` must return `{ "token": "<jwt>" }` for `GET ?room=&identity=&name=`. The bundled
-`services/token-server` (using `livekit-server-sdk`) is a reference implementation.
+`services/scoutkit-server` (Eclipse Scout RT, minting the JWT in Java) is a reference
+implementation.
 
 ### Styling
 
