@@ -7,7 +7,8 @@
     "dev": "scout-scripts build:dev:watch",
     "build": "scout-scripts build:prod && node scripts/generate-site.mjs",
     "build:dev": "scout-scripts build:dev",
-    "test": "scout-scripts test-server:start"
+    "test": "scout-scripts test:ci",
+    "test:watch": "scout-scripts test-server:start"
   },
   "dependencies": {
     "@scoutkit/livekit": "0.1.0",

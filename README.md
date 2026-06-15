@@ -1,5 +1,8 @@
 # ScoutKit
 
+[![CI](https://github.com/mariusgassen/scoutjs-likekit/actions/workflows/ci.yml/badge.svg)](https://github.com/mariusgassen/scoutjs-likekit/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/mariusgassen/scoutjs-likekit/actions/workflows/codeql.yml/badge.svg)](https://github.com/mariusgassen/scoutjs-likekit/actions/workflows/codeql.yml)
+
 A **Teams/Slack-like meeting tool** built on **Eclipse Scout**: a contact directory,
 **persistent chat** (DMs + group/meeting rooms) that outlives calls, and **LiveKit**
 video meetings — backed by a real **Eclipse Scout RT Java server** with database

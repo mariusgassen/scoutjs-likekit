@@ -1,0 +1,34 @@
+version: 2
+updates:
+  # JS / TypeScript: one npm workspace at the repo root covers apps/* and packages/*.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      # Keep the Scout core + cli in lockstep; they must share one version.
+      eclipse-scout:
+        patterns:
+          - "@eclipse-scout/*"
+      dev-dependencies:
+        dependency-type: development
+
+  # Java back end (Maven). jOOQ, Flyway, Scout RT, the Postgres/JWT deps.
+  - package-ecosystem: maven
+    directory: /services/scoutkit-server
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+
+  # The workflow action pins themselves (actions/checkout, docker/*, codeql, …).
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+
+  # The base images in the server Dockerfile (node, maven, eclipse-temurin).
+  - package-ecosystem: docker
+    directory: /services/scoutkit-server
+    schedule:
+      interval: weekly
