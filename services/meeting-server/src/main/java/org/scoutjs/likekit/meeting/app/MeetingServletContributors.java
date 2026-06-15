@@ -6,12 +6,15 @@ import org.eclipse.jetty.ee10.servlet.ServletHolder;
 import org.eclipse.scout.rt.jetty.IServletContributor;
 import org.eclipse.scout.rt.jetty.IServletFilterContributor;
 import org.eclipse.scout.rt.platform.Order;
+import org.eclipse.scout.rt.platform.config.CONFIG;
+import org.eclipse.scout.rt.platform.util.StringUtility;
 import org.eclipse.scout.rt.rest.RestApplication;
 import org.eclipse.scout.rt.rest.ServletConstants;
 import org.eclipse.scout.rt.server.context.HttpServerRunContextFilter;
 import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.glassfish.jersey.servlet.ServletProperties;
+import org.scoutjs.likekit.meeting.config.MeetingProperties.WebRootProperty;
 
 /**
  * Registers the JAX-RS (Jersey) servlet for {@code /api/*} plus the CORS, anonymous-auth and
@@ -60,6 +63,21 @@ public final class MeetingServletContributors {
     public void contribute(ServletContextHandler handler) {
       FilterHolder filter = handler.addFilter(HttpServerRunContextFilter.class, ServletConstants.API_PATH_WITH_WILDCARD, null);
       filter.setInitParameter("session", "false");
+    }
+  }
+
+  /**
+   * Serve the built Scout JS web app at {@code /} when {@code meeting.web.root} is set, so a single
+   * Scout container serves both the UI and the API. The more specific {@code /api/*} mapping always
+   * wins over this catch-all, so the API is unaffected.
+   */
+  @Order(6000)
+  public static class StaticResourceServletContributor implements IServletContributor {
+    @Override
+    public void contribute(ServletContextHandler handler) {
+      if (StringUtility.hasText(CONFIG.getPropertyValue(WebRootProperty.class))) {
+        handler.addServlet(StaticResourceServlet.class, "/").setInitOrder(2);
+      }
     }
   }
 }

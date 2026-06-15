@@ -114,4 +114,23 @@ public final class MeetingProperties {
       return "";
     }
   }
+
+  public static class WebRootProperty extends AbstractStringConfigProperty {
+    @Override
+    public String getKey() {
+      return "meeting.web.root";
+    }
+
+    @Override
+    public String description() {
+      return "Filesystem directory of the built Scout JS web app to serve at '/'. "
+          + "When empty (default) the server is API-only; set it to serve the UI and the API "
+          + "from this single Scout container.";
+    }
+
+    @Override
+    public String getDefaultValue() {
+      return "";
+    }
+  }
 }
