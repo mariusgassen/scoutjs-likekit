@@ -34,8 +34,7 @@ export class Desktop extends ScoutDesktop {
       menus: [
         {
           id: 'NameMenu',
-          objectType: Menu,
-          text: this._nameMenuText()
+          objectType: Menu
         }
       ]
     };
@@ -44,12 +43,13 @@ export class Desktop extends ScoutDesktop {
   protected override _init(model: InitModelOf<this>): void {
     super._init(model);
     this._nameMenu = this.widget('NameMenu', Menu);
+    this._nameMenu.setText(this._nameMenuText());
     this._nameMenu.on('action', () => this._onEditName());
     userIdentity.onChange(() => this._nameMenu.setText(this._nameMenuText()));
   }
 
   protected _nameMenuText(): string {
-    return `You: ${userIdentity.displayName}`;
+    return this.session.text('scoutkit.You', userIdentity.displayName);
   }
 
   protected _onEditName(): void {

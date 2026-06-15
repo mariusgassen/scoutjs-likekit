@@ -88,12 +88,12 @@ export class LiveKitMeeting extends Widget {
   protected _renderHeader(): void {
     this.$header = this.$container.appendDiv('lk-header');
     const $info = this.$header.appendDiv('lk-header-info');
-    this.$roomTitle = $info.appendDiv('lk-room-title').text(this.room || 'Meeting');
-    this.$status = $info.appendDiv('lk-status').text('Not connected');
+    this.$roomTitle = $info.appendDiv('lk-room-title').text(this.room || this._text('Meeting', 'Meeting'));
+    this.$status = $info.appendDiv('lk-status').text(this._text('NotConnected', 'Not connected'));
 
     const $actions = this.$header.appendDiv('lk-header-actions');
     this.$inviteBtn = $actions.appendElement('<button>', 'lk-btn lk-invite')
-      .text('Copy invite link')
+      .text(this._text('CopyInviteLink', 'Copy invite link'))
       .on('click', this._onCopyInvite.bind(this));
     this.$inviteBtn.setVisible(!!this.inviteUrl);
   }
@@ -104,7 +104,7 @@ export class LiveKitMeeting extends Widget {
     this.$stage = this.$body.appendDiv('lk-stage');
     this.$grid = this.$stage.appendDiv('lk-grid');
     this.$empty = this.$grid.appendDiv('lk-empty')
-      .text('Waiting for others to join…');
+      .text(this._text('WaitingForOthers', 'Waiting for others to join…'));
 
     // Floating self-view (picture-in-picture). Starts as a "camera off" placeholder.
     this.$selfView = this.$stage.appendDiv('lk-selfview');
@@ -118,7 +118,7 @@ export class LiveKitMeeting extends Widget {
   protected _renderChat(): void {
     this.$chat = this.$body.appendDiv('lk-chat');
     const $chatHeader = this.$chat.appendDiv('lk-chat-header');
-    $chatHeader.appendElement('<span>', 'lk-chat-title').text('Chat');
+    $chatHeader.appendElement('<span>', 'lk-chat-title').text(this._text('Chat', 'Chat'));
     $chatHeader.appendElement('<button>', 'lk-chat-close')
       .text('×')
       .on('click', () => this.setChatVisible(false));
@@ -127,27 +127,27 @@ export class LiveKitMeeting extends Widget {
     const $row = this.$chat.appendDiv('lk-chat-row');
     this.$chatInput = $row.appendElement('<input>', 'lk-chat-input')
       .attr('type', 'text')
-      .attr('placeholder', 'Type a message…')
+      .attr('placeholder', this._text('TypeMessage', 'Type a message…'))
       .on('keydown', (event: JQuery.KeyDownEvent) => {
         if (event.which === 13) { // Enter
           this._onSendChat();
         }
       });
     $row.appendElement('<button>', 'lk-btn lk-chat-send')
-      .text('Send')
+      .text(this._text('Send', 'Send'))
       .on('click', this._onSendChat.bind(this));
   }
 
   protected _renderControls(): void {
     this.$controls = this.$container.appendDiv('lk-controls');
     this.$micBtn = this.$controls.appendElement('<button>', 'lk-btn lk-mic')
-      .text('Mute mic')
+      .text(this._text('MuteMic', 'Mute mic'))
       .on('click', this._onToggleMic.bind(this));
     this.$camBtn = this.$controls.appendElement('<button>', 'lk-btn lk-cam')
-      .text('Stop camera')
+      .text(this._text('StopCamera', 'Stop camera'))
       .on('click', this._onToggleCamera.bind(this));
     this.$screenBtn = this.$controls.appendElement('<button>', 'lk-btn lk-screen')
-      .text('Share screen')
+      .text(this._text('ShareScreen', 'Share screen'))
       .on('click', this._onToggleScreenShare.bind(this));
 
     this.$controls.appendDiv('lk-controls-spacer');
@@ -155,13 +155,13 @@ export class LiveKitMeeting extends Widget {
     if (this.chatEnabled) {
       this.$chatBtn = this.$controls.appendElement('<button>', 'lk-btn lk-chat-toggle')
         .on('click', () => this.setChatVisible(!this.chatVisible));
-      this.$chatBtn.appendElement('<span>', 'lk-chat-toggle-label').text('Chat');
+      this.$chatBtn.appendElement('<span>', 'lk-chat-toggle-label').text(this._text('Chat', 'Chat'));
       this.$chatBadge = this.$chatBtn.appendElement('<span>', 'lk-chat-badge');
       this._updateChatToggle();
     }
 
     this.$controls.appendElement('<button>', 'lk-btn lk-leave')
-      .text('Leave')
+      .text(this._text('Leave', 'Leave'))
       .on('click', this._onLeave.bind(this));
   }
 
@@ -176,7 +176,7 @@ export class LiveKitMeeting extends Widget {
     if (this.connected || !this.room || !this.identity) {
       return;
     }
-    this._setStatus(`Connecting to "${this.room}"…`);
+    this._setStatus(this._text('ConnectingTo', `Connecting to "${this.room}"…`, this.room));
     try {
       const token = await this.tokenProvider.fetchToken({
         room: this.room,
@@ -202,7 +202,8 @@ export class LiveKitMeeting extends Widget {
       this._updateParticipantCount();
       this.trigger('joined');
     } catch (error) {
-      this._setStatus(`Failed to connect: ${error instanceof Error ? error.message : error}`);
+      const reason = error instanceof Error ? error.message : String(error);
+      this._setStatus(this._text('FailedToConnect', `Failed to connect: ${reason}`, reason));
       this.trigger('error', {error});
     }
   }
@@ -226,7 +227,7 @@ export class LiveKitMeeting extends Widget {
 
   protected _onRoomDisconnected(): void {
     this.connected = false;
-    this._setStatus('Disconnected');
+    this._setStatus(this._text('Disconnected', 'Disconnected'));
   }
 
   // --- track <-> DOM bridge -------------------------------------------------
@@ -262,7 +263,7 @@ export class LiveKitMeeting extends Widget {
       return;
     }
     const sid = this.adapter.room.localParticipant.sid;
-    this._renderGridTile(this._tileKey(sid, pub.source), pub.track as unknown as RemoteTrack, 'You · screen', {screen: true});
+    this._renderGridTile(this._tileKey(sid, pub.source), pub.track as unknown as RemoteTrack, this._text('YouScreen', 'You · screen'), {screen: true});
   }
 
   protected _onLocalTrackUnpublished(pub: LocalTrackPublication): void {
@@ -305,14 +306,14 @@ export class LiveKitMeeting extends Widget {
     this.$selfView.empty().removeClass('lk-selfview-off').addClass('lk-mirror');
     const videoEl = track.attach();
     this.$selfView[0].appendChild(videoEl);
-    this.$selfView.appendDiv('lk-tile-label').text('You');
+    this.$selfView.appendDiv('lk-tile-label').text(this._text('You', 'You'));
   }
 
   /** Resets the self-view to a "camera off" placeholder. */
   protected _clearSelfView(): void {
     this.$selfView.empty().removeClass('lk-mirror').addClass('lk-selfview-off');
-    this.$selfView.appendDiv('lk-selfview-avatar').text('You');
-    this.$selfView.appendDiv('lk-tile-label').text('Camera off');
+    this.$selfView.appendDiv('lk-selfview-avatar').text(this._text('You', 'You'));
+    this.$selfView.appendDiv('lk-tile-label').text(this._text('CameraOffLabel', 'Camera off'));
   }
 
   protected _removeTile(key: string): void {
@@ -348,8 +349,9 @@ export class LiveKitMeeting extends Widget {
       return;
     }
     const count = this.adapter.participantCount();
-    const who = count === 1 ? '1 participant' : `${count} participants`;
-    this._setStatus(`Connected · ${who}`);
+    this._setStatus(count === 1
+      ? this._text('ConnectedOne', 'Connected · 1 participant')
+      : this._text('ConnectedMany', `Connected · ${count} participants`, String(count)));
   }
 
   // --- control handlers -----------------------------------------------------
@@ -360,7 +362,7 @@ export class LiveKitMeeting extends Widget {
     }
     const enabled = !this.adapter.isMicrophoneEnabled();
     this.adapter.setMicrophoneEnabled(enabled);
-    this.$micBtn.toggleClass('lk-off', !enabled).text(enabled ? 'Mute mic' : 'Unmute mic');
+    this.$micBtn.toggleClass('lk-off', !enabled).text(enabled ? this._text('MuteMic', 'Mute mic') : this._text('UnmuteMic', 'Unmute mic'));
   }
 
   protected _onToggleCamera(): void {
@@ -369,7 +371,7 @@ export class LiveKitMeeting extends Widget {
     }
     const enabled = !this.adapter.isCameraEnabled();
     this.adapter.setCameraEnabled(enabled);
-    this.$camBtn.toggleClass('lk-off', !enabled).text(enabled ? 'Stop camera' : 'Start camera');
+    this.$camBtn.toggleClass('lk-off', !enabled).text(enabled ? this._text('StopCamera', 'Stop camera') : this._text('StartCamera', 'Start camera'));
   }
 
   protected _onToggleScreenShare(): void {
@@ -378,7 +380,7 @@ export class LiveKitMeeting extends Widget {
     }
     const enabled = !this.adapter.isScreenShareEnabled();
     this.adapter.setScreenShareEnabled(enabled)
-      .then(() => this.$screenBtn.toggleClass('lk-on', enabled).text(enabled ? 'Stop sharing' : 'Share screen'))
+      .then(() => this.$screenBtn.toggleClass('lk-on', enabled).text(enabled ? this._text('StopSharing', 'Stop sharing') : this._text('ShareScreen', 'Share screen')))
       .catch(() => { /* user cancelled the picker */ });
   }
 
@@ -392,8 +394,8 @@ export class LiveKitMeeting extends Widget {
       return;
     }
     const done = () => {
-      const original = 'Copy invite link';
-      this.$inviteBtn.text('Copied!').addClass('lk-on');
+      const original = this._text('CopyInviteLink', 'Copy invite link');
+      this.$inviteBtn.text(this._text('Copied', 'Copied!')).addClass('lk-on');
       setTimeout(() => {
         if (this.$inviteBtn) {
           this.$inviteBtn.text(original).removeClass('lk-on');
@@ -478,7 +480,7 @@ export class LiveKitMeeting extends Widget {
     }
     const $msg = this.$chatMessages.appendDiv('lk-msg');
     $msg.toggleClass('lk-msg-own', own);
-    $msg.appendElement('<span>', 'lk-msg-name').text(own ? 'You' : message.name);
+    $msg.appendElement('<span>', 'lk-msg-name').text(own ? this._text('You', 'You') : message.name);
     $msg.appendElement('<span>', 'lk-msg-text').text(message.text);
     this.$chatMessages[0].scrollTop = this.$chatMessages[0].scrollHeight;
   }
@@ -489,5 +491,14 @@ export class LiveKitMeeting extends Widget {
     if (this.$status) {
       this.$status.text(text);
     }
+  }
+
+  /**
+   * Localized text lookup for this widget. Uses the translation registered under
+   * `scoutkit.livekit.<key>` if the host application provides it (see the host's texts resource),
+   * otherwise falls back to the given English default so the widget stays usable standalone.
+   */
+  protected _text(key: string, defaultText: string, ...args: string[]): string {
+    return this.session.optText('scoutkit.livekit.' + key, defaultText, ...args);
   }
 }

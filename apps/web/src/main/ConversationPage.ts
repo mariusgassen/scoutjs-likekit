@@ -26,7 +26,7 @@ export class ConversationPage extends PageWithNodes {
     this.leaf = true;
     this.detailTableVisible = false;
     if (!this.text) {
-      this.text = this.conversation?.title || this.contact?.name || 'Conversation';
+      this.text = this.conversation?.title || this.contact?.name || this.session.text('scoutkit.Conversation');
     }
   }
 

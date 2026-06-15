@@ -16,7 +16,7 @@ export class SearchQueryForm extends Form {
 
   protected override _jsonModel(): FormModel {
     return {
-      title: 'Search messages',
+      title: '${textKey:scoutkit.SearchMessages}',
       displayHint: Form.DisplayHint.DIALOG,
       modal: true,
       rootGroupBox: {
@@ -26,15 +26,15 @@ export class SearchQueryForm extends Form {
           {
             id: 'query',
             objectType: StringField,
-            label: 'Query',
+            label: '${textKey:scoutkit.Query}',
             labelVisible: false,
             // PostgreSQL websearch syntax: "quoted phrase", -excluded, OR.
-            placeholder: 'Search all conversations… (e.g. budget OR roadmap, "kick off", -draft)'
+            placeholder: '${textKey:scoutkit.SearchPlaceholder}'
           },
           {
             id: 'ok',
             objectType: Button,
-            label: 'Search',
+            label: '${textKey:Search}',
             systemType: Button.SystemType.OK,
             processButton: true,
             keyStroke: 'enter'
@@ -42,7 +42,7 @@ export class SearchQueryForm extends Form {
           {
             id: 'cancel',
             objectType: Button,
-            label: 'Cancel',
+            label: '${textKey:Cancel}',
             systemType: Button.SystemType.CANCEL,
             processButton: true
           }

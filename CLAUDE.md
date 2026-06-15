@@ -100,6 +100,36 @@ Desktop (DEFAULT) → WorkspaceOutline
 - `@eclipse-scout/core` is a **peer dependency** of `packages/livekit` — the host app provides the
   single Scout core copy (a second copy breaks the object registry).
 
+## Translations (i18n)
+
+This is a **JS-only app served as static files** (no Scout RT host server that would normally
+generate the text resources), so translations are wired up by hand:
+
+- **Bootstrap loads them.** `apps/web/src/index.ts` calls `App.init({bootstrap: {textsUrl:
+  ['texts.json', 'texts-app.json'], localesUrl: 'locales.json'}})`. **Without `textsUrl`/`localesUrl`
+  every Scout core text renders as `[undefined text: <key>]`** — that was the original "missing
+  translations" bug.
+- **`texts.json` + `locales.json` are Scout core's** (UI texts + locale metadata, both incl. German).
+  They are *not* in the repo: `apps/web/webpack.config.js` copies them out of `@eclipse-scout/core`'s
+  `dist/` into the `res` output (which `scripts/generate-site.mjs` then places at the site root). Core
+  only exports its `import` entry + `./src/*`, so the path is resolved via
+  `require.resolve('@eclipse-scout/core/src/index.ts')` → sibling `dist/`.
+- **`apps/web/res/texts-app.json` holds the app's own strings** under `scoutkit.*` keys, with a
+  `default` (English) and a `de` (German) map (keep the two in sync). Scout merges it on top of the
+  core texts (later URL wins). The session locale is auto-detected from the browser
+  (`locales.getNavigatorLocale()`), so a German browser shows German with fallback to `default`.
+- **In models**, localize via the placeholder `'${textKey:Key}'` — Scout auto-resolves the standard
+  text properties (`Form.title`, `FormField`/`Button` `label`, `Column.text`, `Menu`/`Action.text`,
+  `TreeNode`/`Page.text`, `Outline.title`). Reuse core keys where they fit (e.g. `${textKey:Cancel}`,
+  `${textKey:Search}`, `${textKey:Name}`, `${textKey:Status}`).
+- **Imperative/dynamic strings** (jQuery `.text(...)`, `placeholder` attrs, args) use
+  `this.session.text('scoutkit.Key', ...args)` (`{0}`-style placeholders). Note `_jsonModel()` runs
+  **before** `session` is set, so resolve dynamic texts in `_init`/runtime, not in the model.
+- **`packages/livekit` is reusable**, so it must not hard-depend on host text keys: it uses
+  `this.session.optText('scoutkit.livekit.<key>', '<English default>', ...)` via the `_text()` helper —
+  the host's `texts-app.json` supplies the German, and the baked-in English default keeps the widget
+  usable standalone.
+
 ## Persistence (PostgreSQL + jOOQ + Flyway)
 
 - **Schema is owned by Flyway**, not code. Migrations live in
@@ -124,3 +154,9 @@ npm run build:lib                 # compile @scoutkit/livekit (apps/web depends 
 npx tsc -p apps/web/tsconfig.json # typecheck the app
 npm run build:web                 # full webpack prod build + static site
 ```
+
+> ⏱️ **Don't run the full prod build (`npm run build` / `build:web`) on every change.** The GitHub
+> Actions workflows already build lib + web (and the server) on push/PR, so any failure surfaces
+> there anyway. For local iteration prefer the fast checks — `npm run build:lib` (when `livekit`
+> types changed) and `npx tsc -p apps/web/tsconfig.json` (typecheck) — and reserve the full
+> `build:web` for when you specifically need to verify the bundled/static-site output.

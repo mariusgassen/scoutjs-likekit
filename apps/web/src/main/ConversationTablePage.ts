@@ -25,16 +25,16 @@ export class ConversationTablePage extends PageWithTable {
       autoResizeColumns: true,
       columns: [
         {id: 'id', objectType: Column, visible: false},
-        {id: 'title', objectType: Column, text: 'Conversation', width: 220, summary: true},
-        {id: 'type', objectType: Column, text: 'Type', width: 90},
-        {id: 'lastMessage', objectType: Column, text: 'Last message', width: 320},
-        {id: 'members', objectType: NumberColumn, text: 'Members', width: 90}
+        {id: 'title', objectType: Column, text: '${textKey:scoutkit.Conversation}', width: 220, summary: true},
+        {id: 'type', objectType: Column, text: '${textKey:scoutkit.Type}', width: 90},
+        {id: 'lastMessage', objectType: Column, text: '${textKey:scoutkit.LastMessage}', width: 320},
+        {id: 'members', objectType: NumberColumn, text: '${textKey:scoutkit.Members}', width: 90}
       ],
       menus: [
         {
           id: 'NewMeetingMenu',
           objectType: Menu,
-          text: 'New meeting',
+          text: '${textKey:scoutkit.NewMeeting}',
           menuTypes: [Table.MenuType.EmptySpace],
           keyStroke: 'insert'
         }
@@ -59,12 +59,12 @@ export class ConversationTablePage extends PageWithTable {
       this._convById.set(conv.id, conv);
       const preview = conv.lastMessage
         ? `${conv.lastAuthor ? conv.lastAuthor.split(' ')[0] + ': ' : ''}${conv.lastMessage}`
-        : 'No messages yet';
+        : this.session.text('scoutkit.NoMessagesYet');
       return {
         cells: [
           conv.id,
           conv.title || conv.id,
-          conv.type === 'direct' ? 'Direct' : 'Meeting',
+          conv.type === 'direct' ? this.session.text('scoutkit.Direct') : this.session.text('scoutkit.Meeting'),
           preview,
           conv.memberCount
         ]

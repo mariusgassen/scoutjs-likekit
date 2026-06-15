@@ -24,7 +24,7 @@ export class ChatForm extends Form {
 
   protected override _init(model: InitModelOf<this>): void {
     super._init(model);
-    this.title = this.conversation?.title || this.contact?.name || 'Conversation';
+    this.title = this.conversation?.title || this.contact?.name || this.session.text('scoutkit.Conversation');
   }
 
   protected override _jsonModel(): FormModel {
