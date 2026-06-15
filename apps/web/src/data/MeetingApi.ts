@@ -54,6 +54,17 @@ export class MeetingApi {
     return this._send('POST', '/conversations', req);
   }
 
+  /** Returns the existing direct conversation with the given contact, or creates one on the fly. */
+  ensureDirectConversation(contact: Contact): Promise<Conversation> {
+    return this.conversations().then(list => {
+      const existing = list.find(c => c.type === 'direct' && c.memberIds.length === 1 && c.memberIds[0] === contact.id);
+      if (existing) {
+        return existing;
+      }
+      return this.createConversation({type: 'direct', title: contact.name, memberIds: [contact.id]});
+    });
+  }
+
   messages(conversationId: string, after = 0): Promise<Message[]> {
     return this._get(`/conversations/${encodeURIComponent(conversationId)}/messages?after=${after}`);
   }
@@ -85,3 +96,6 @@ export class MeetingApi {
     return res.json() as Promise<T>;
   }
 }
+
+/** Single shared API client for the whole app. */
+export const meetingApi = new MeetingApi();
