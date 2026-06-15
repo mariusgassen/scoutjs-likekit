@@ -16,6 +16,12 @@ so they don't have to be re-fetched each session (the docs site blocks automated
 Related concept pages (same technical guide): `.../user-interface/desktop.html`,
 `.../user-interface/page.html`, `.../user-interface/form.html`, `.../user-interface/table.html`.
 
+> 📒 **Layout & widget best practices live in [`docs/scout-notes.md`](docs/scout-notes.md)** — a
+> repo-specific Scout 26.1 reference (widget lifecycle/`HtmlComponent`, `LogicalGridLayout` &
+> `GridData`, forms, tables, outlines, theming) grounded in the installed `@eclipse-scout/core` source
+> (the docs site blocks automated fetching). Read it before touching layout. Update it when you learn
+> something new.
+
 ---
 
 ## Basic concept 1 — Scout JS Full Stack

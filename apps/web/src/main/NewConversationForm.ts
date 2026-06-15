@@ -38,6 +38,7 @@ export class NewConversationForm extends Form {
               objectType: Table,
               checkable: true,
               headerVisible: true,
+              autoResizeColumns: true,
               columns: [
                 {id: 'id', objectType: Column, visible: false},
                 {id: 'name', objectType: Column, text: 'Contact', width: 260}

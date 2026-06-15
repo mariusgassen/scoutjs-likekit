@@ -21,6 +21,7 @@ export class ContactTablePage extends PageWithTable {
     return scout.create(Table, {
       parent: this.outline,
       headerVisible: true,
+      autoResizeColumns: true,
       columns: [
         {id: 'id', objectType: Column, visible: false},
         {id: 'name', objectType: Column, text: 'Name', width: 200, summary: true},
