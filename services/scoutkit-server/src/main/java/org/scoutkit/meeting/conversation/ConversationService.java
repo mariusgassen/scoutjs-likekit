@@ -1,67 +1,53 @@
 package org.scoutkit.meeting.conversation;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Comparator;
+import static org.scoutkit.meeting.jooq.Tables.CONVERSATION;
+import static org.scoutkit.meeting.jooq.Tables.CONVERSATION_MEMBER;
+import static org.scoutkit.meeting.jooq.Tables.MESSAGE;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.eclipse.scout.rt.platform.ApplicationScoped;
 import org.eclipse.scout.rt.platform.BEANS;
-import org.eclipse.scout.rt.platform.exception.ProcessingException;
 import org.eclipse.scout.rt.platform.util.StringUtility;
+import org.jooq.DSLContext;
+import org.jooq.Field;
+import org.jooq.impl.DSL;
 import org.scoutkit.meeting.data.Database;
 import org.scoutkit.meeting.model.Conversation;
 import org.scoutkit.meeting.model.Message;
+import org.scoutkit.meeting.model.MessageHit;
 import org.scoutkit.meeting.model.NewConversation;
 import org.scoutkit.meeting.model.NewMessage;
 
 /**
- * Conversations (DMs + group/meeting chats) and their persistent messages. Chat history lives
- * here independently of any LiveKit call, so it outlives the call — including multi-person
- * meetings (the conversation id doubles as the LiveKit room name).
+ * Conversations (DMs + group/meeting chats) and their persistent messages, backed by PostgreSQL
+ * via jOOQ. Chat history lives here independently of any LiveKit call, so it outlives the call —
+ * including multi-person meetings (the conversation id doubles as the LiveKit room name).
  */
 @ApplicationScoped
 public class ConversationService {
 
   public List<Conversation> list() {
-    List<Conversation> result = new ArrayList<>();
-    try (Connection conn = BEANS.get(Database.class).getConnection();
-        PreparedStatement ps = conn.prepareStatement(
-            "SELECT id, type, title, created_ts FROM conversation");
-        ResultSet rs = ps.executeQuery()) {
-      while (rs.next()) {
-        result.add(readConversation(conn, rs.getString("id"), rs.getString("type"),
-            rs.getString("title"), rs.getLong("created_ts")));
-      }
-    }
-    catch (SQLException e) {
-      throw new ProcessingException("Could not list conversations", e);
-    }
-    result.sort(Comparator.comparingLong(Conversation::lastTs).reversed());
+    DSLContext db = db();
+    List<Conversation> result = db
+        .select(CONVERSATION.ID, CONVERSATION.TYPE, CONVERSATION.TITLE, CONVERSATION.CREATED_TS)
+        .from(CONVERSATION)
+        .fetch(r -> readConversation(db, r.get(CONVERSATION.ID), r.get(CONVERSATION.TYPE),
+            r.get(CONVERSATION.TITLE), r.get(CONVERSATION.CREATED_TS)));
+    result.sort((a, b) -> Long.compare(b.lastTs(), a.lastTs()));
     return result;
   }
 
   public Optional<Conversation> get(String id) {
-    try (Connection conn = BEANS.get(Database.class).getConnection();
-        PreparedStatement ps = conn.prepareStatement(
-            "SELECT id, type, title, created_ts FROM conversation WHERE id = ?")) {
-      ps.setString(1, id);
-      try (ResultSet rs = ps.executeQuery()) {
-        if (!rs.next()) {
-          return Optional.empty();
-        }
-        return Optional.of(readConversation(conn, rs.getString("id"), rs.getString("type"),
-            rs.getString("title"), rs.getLong("created_ts")));
-      }
-    }
-    catch (SQLException e) {
-      throw new ProcessingException("Could not read conversation " + id, e);
-    }
+    DSLContext db = db();
+    return db
+        .select(CONVERSATION.ID, CONVERSATION.TYPE, CONVERSATION.TITLE, CONVERSATION.CREATED_TS)
+        .from(CONVERSATION)
+        .where(CONVERSATION.ID.eq(id))
+        .fetchOptional(r -> readConversation(db, r.get(CONVERSATION.ID), r.get(CONVERSATION.TYPE),
+            r.get(CONVERSATION.TITLE), r.get(CONVERSATION.CREATED_TS)));
   }
 
   public Conversation create(NewConversation req) {
@@ -70,52 +56,36 @@ public class ConversationService {
     long now = System.currentTimeMillis();
     List<String> memberIds = req.memberIds() != null ? req.memberIds() : List.of();
 
-    try (Connection conn = BEANS.get(Database.class).getConnection()) {
-      try (PreparedStatement ps = conn.prepareStatement(
-          "INSERT INTO conversation (id, type, title, created_ts) VALUES (?, ?, ?, ?)")) {
-        ps.setString(1, id);
-        ps.setString(2, type);
-        ps.setString(3, req.title());
-        ps.setLong(4, now);
-        ps.executeUpdate();
-      }
+    DSLContext db = db();
+    db.transaction(tx -> {
+      DSLContext t = tx.dsl();
+      t.insertInto(CONVERSATION)
+          .set(CONVERSATION.ID, id)
+          .set(CONVERSATION.TYPE, type)
+          .set(CONVERSATION.TITLE, req.title())
+          .set(CONVERSATION.CREATED_TS, now)
+          .execute();
       if (!memberIds.isEmpty()) {
-        try (PreparedStatement ps = conn.prepareStatement(
-            "INSERT INTO conversation_member (conversation_id, contact_id) VALUES (?, ?)")) {
-          for (String contactId : memberIds) {
-            ps.setString(1, id);
-            ps.setString(2, contactId);
-            ps.addBatch();
-          }
-          ps.executeBatch();
-        }
+        var batch = memberIds.stream()
+            .map(contactId -> t.insertInto(CONVERSATION_MEMBER)
+                .set(CONVERSATION_MEMBER.CONVERSATION_ID, id)
+                .set(CONVERSATION_MEMBER.CONTACT_ID, contactId))
+            .toList();
+        t.batch(batch).execute();
       }
-      return readConversation(conn, id, type, req.title(), now);
-    }
-    catch (SQLException e) {
-      throw new ProcessingException("Could not create conversation", e);
-    }
+    });
+    return readConversation(db, id, type, req.title(), now);
   }
 
   public List<Message> messages(String conversationId, long afterTs) {
-    List<Message> result = new ArrayList<>();
-    try (Connection conn = BEANS.get(Database.class).getConnection();
-        PreparedStatement ps = conn.prepareStatement(
-            "SELECT id, conversation_id, author, text, created_ts FROM message "
-                + "WHERE conversation_id = ? AND created_ts > ? ORDER BY created_ts ASC, id ASC")) {
-      ps.setString(1, conversationId);
-      ps.setLong(2, afterTs);
-      try (ResultSet rs = ps.executeQuery()) {
-        while (rs.next()) {
-          result.add(new Message(rs.getString("id"), rs.getString("conversation_id"),
-              rs.getString("author"), rs.getString("text"), rs.getLong("created_ts")));
-        }
-      }
-    }
-    catch (SQLException e) {
-      throw new ProcessingException("Could not load messages for " + conversationId, e);
-    }
-    return result;
+    return db()
+        .select(MESSAGE.ID, MESSAGE.CONVERSATION_ID, MESSAGE.AUTHOR, MESSAGE.TEXT, MESSAGE.CREATED_TS)
+        .from(MESSAGE)
+        .where(MESSAGE.CONVERSATION_ID.eq(conversationId))
+        .and(MESSAGE.CREATED_TS.gt(afterTs))
+        .orderBy(MESSAGE.CREATED_TS.asc(), MESSAGE.ID.asc())
+        .fetch(r -> new Message(r.get(MESSAGE.ID), r.get(MESSAGE.CONVERSATION_ID),
+            r.get(MESSAGE.AUTHOR), r.get(MESSAGE.TEXT), r.get(MESSAGE.CREATED_TS)));
   }
 
   public Message addMessage(String conversationId, NewMessage req) {
@@ -123,50 +93,80 @@ public class ConversationService {
     long now = System.currentTimeMillis();
     String author = StringUtility.hasText(req.author()) ? req.author() : "Anonymous";
     String text = req.text() != null ? req.text() : "";
-    try (Connection conn = BEANS.get(Database.class).getConnection();
-        PreparedStatement ps = conn.prepareStatement(
-            "INSERT INTO message (id, conversation_id, author, text, created_ts) VALUES (?, ?, ?, ?, ?)")) {
-      ps.setString(1, id);
-      ps.setString(2, conversationId);
-      ps.setString(3, author);
-      ps.setString(4, text);
-      ps.setLong(5, now);
-      ps.executeUpdate();
-    }
-    catch (SQLException e) {
-      throw new ProcessingException("Could not store message", e);
-    }
+    db()
+        .insertInto(MESSAGE)
+        .set(MESSAGE.ID, id)
+        .set(MESSAGE.CONVERSATION_ID, conversationId)
+        .set(MESSAGE.AUTHOR, author)
+        .set(MESSAGE.TEXT, text)
+        .set(MESSAGE.CREATED_TS, now)
+        .execute();
     return new Message(id, conversationId, author, text, now);
   }
 
-  protected Conversation readConversation(Connection conn, String id, String type, String title, long createdTs) throws SQLException {
-    List<String> memberIds = new ArrayList<>();
-    try (PreparedStatement ps = conn.prepareStatement(
-        "SELECT contact_id FROM conversation_member WHERE conversation_id = ?")) {
-      ps.setString(1, id);
-      try (ResultSet rs = ps.executeQuery()) {
-        while (rs.next()) {
-          memberIds.add(rs.getString("contact_id"));
-        }
-      }
+  /**
+   * Full-text search across all chat messages, powered by PostgreSQL's text search. The
+   * {@code search_tsv} column (a stored, GIN-indexed {@code tsvector}; see migration V2) is matched
+   * with {@code websearch_to_tsquery} (Google-style query syntax), ranked by {@code ts_rank}, and
+   * each hit carries a highlighted {@code ts_headline} snippet. Referenced via jOOQ plain SQL
+   * because the FTS column is intentionally outside the generated meta-model.
+   */
+  public List<MessageHit> search(String query, int limit) {
+    if (!StringUtility.hasText(query)) {
+      return List.of();
     }
+    int max = Math.max(1, Math.min(limit, 100));
+    Field<Object> tsquery = DSL.field("websearch_to_tsquery('english', {0})", Object.class, DSL.val(query));
+    // search_tsv is intentionally outside the generated meta-model (PostgreSQL tsvector, migration V2).
+    Field<Object> tsvector = DSL.field(DSL.name(MESSAGE.getName(), "search_tsv"));
+    Field<Double> rank = DSL.field("ts_rank({0}, {1})", Double.class, tsvector, tsquery);
+    Field<String> snippet = DSL.field(
+        "ts_headline('english', {0}, {1}, 'StartSel=[, StopSel=], MaxFragments=2, MaxWords=18, MinWords=5')",
+        String.class, MESSAGE.TEXT, tsquery);
 
-    String lastMessage = null;
-    String lastAuthor = null;
-    long lastTs = createdTs;
-    try (PreparedStatement ps = conn.prepareStatement(
-        "SELECT author, text, created_ts FROM message WHERE conversation_id = ? "
-            + "ORDER BY created_ts DESC, id DESC LIMIT 1")) {
-      ps.setString(1, id);
-      try (ResultSet rs = ps.executeQuery()) {
-        if (rs.next()) {
-          lastAuthor = rs.getString("author");
-          lastMessage = rs.getString("text");
-          lastTs = rs.getLong("created_ts");
-        }
-      }
-    }
+    Field<Integer> memberCount = DSL.field(DSL.selectCount()
+        .from(CONVERSATION_MEMBER)
+        .where(CONVERSATION_MEMBER.CONVERSATION_ID.eq(CONVERSATION.ID)));
 
-    return new Conversation(id, type, title, memberIds, memberIds.size(), lastMessage, lastAuthor, lastTs);
+    return db()
+        .select(MESSAGE.ID, MESSAGE.CONVERSATION_ID, MESSAGE.AUTHOR, MESSAGE.CREATED_TS,
+            CONVERSATION.TITLE, CONVERSATION.TYPE, memberCount.as("member_count"), snippet.as("snippet"))
+        .from(MESSAGE)
+        .join(CONVERSATION).on(CONVERSATION.ID.eq(MESSAGE.CONVERSATION_ID))
+        .where(DSL.condition("{0} @@ {1}", tsvector, tsquery))
+        .orderBy(rank.desc(), MESSAGE.CREATED_TS.desc())
+        .limit(max)
+        .fetch(r -> new MessageHit(
+            r.get(MESSAGE.ID),
+            r.get(MESSAGE.CONVERSATION_ID),
+            r.get(CONVERSATION.TITLE),
+            r.get(CONVERSATION.TYPE),
+            r.get("member_count", Integer.class),
+            r.get(MESSAGE.AUTHOR),
+            r.get("snippet", String.class),
+            r.get(MESSAGE.CREATED_TS)));
+  }
+
+  protected Conversation readConversation(DSLContext db, String id, String type, String title, long createdTs) {
+    List<String> memberIds = db
+        .select(CONVERSATION_MEMBER.CONTACT_ID)
+        .from(CONVERSATION_MEMBER)
+        .where(CONVERSATION_MEMBER.CONVERSATION_ID.eq(id))
+        .fetch(CONVERSATION_MEMBER.CONTACT_ID);
+
+    return db
+        .select(MESSAGE.AUTHOR, MESSAGE.TEXT, MESSAGE.CREATED_TS)
+        .from(MESSAGE)
+        .where(MESSAGE.CONVERSATION_ID.eq(id))
+        .orderBy(MESSAGE.CREATED_TS.desc(), MESSAGE.ID.desc())
+        .limit(1)
+        .fetchOptional()
+        .map(r -> new Conversation(id, type, title, memberIds, memberIds.size(),
+            r.get(MESSAGE.TEXT), r.get(MESSAGE.AUTHOR), r.get(MESSAGE.CREATED_TS)))
+        .orElseGet(() -> new Conversation(id, type, title, memberIds, memberIds.size(), null, null, createdTs));
+  }
+
+  protected DSLContext db() {
+    return BEANS.get(Database.class).db();
   }
 }

@@ -34,13 +34,15 @@ The front end talks to the back end over **REST** (JSON). Unsafe methods send an
 
 > Note: the official *getstarted* guide scaffolds a fresh full-stack project via the Scout Maven
 > archetype/IDE plugin (jOOQ + a local Derby dev database). **This repo is already a working
-> full-stack app** and does not use that scaffolding — do not re-scaffold. The mapping here:
+> full-stack app** and does not use that scaffolding — do not re-scaffold. It does, however, use
+> **jOOQ** for data access against a real **PostgreSQL** database (schema owned by **Flyway**; see
+> the persistence note below). The mapping here:
 
 | Full-stack layer | In this repo |
 |------------------|--------------|
 | Scout JS UI | [`apps/web`](apps/web) (TypeScript, `scout-scripts`) — see [`apps/web/README.md`](apps/web/README.md) |
 | Reusable Scout JS widget | [`packages/livekit`](packages/livekit) (`@scoutkit/livekit`, `LiveKitMeeting`) |
-| Scout RT Java server (serves UI + REST + persistence) | [`services/scoutkit-server`](services/scoutkit-server) (Maven, embedded Jetty + H2) |
+| Scout RT Java server (serves UI + REST + persistence) | [`services/scoutkit-server`](services/scoutkit-server) (Maven, embedded Jetty; PostgreSQL via jOOQ + Flyway) |
 | REST data services | `services/scoutkit-server` → `/api/*`; typed client in `apps/web/src/data/MeetingApi.ts` |
 
 Build/run (see root `README.md` for the full table): `npm run dev:server` (Java backend),
@@ -91,6 +93,23 @@ Desktop (DEFAULT) → WorkspaceOutline
   fine on Node 22 (install/typecheck/build all pass). Don't "fix" this by downgrading deps.
 - `@eclipse-scout/core` is a **peer dependency** of `packages/livekit` — the host app provides the
   single Scout core copy (a second copy breaks the object registry).
+
+## Persistence (PostgreSQL + jOOQ + Flyway)
+
+- **Schema is owned by Flyway**, not code. Migrations live in
+  `services/scoutkit-server/src/main/resources/db/migration` (`V1__schema.sql`,
+  `V2__message_fulltext_search.sql`, `V3__seed.sql`) and run on platform startup
+  (`SchemaInitializer` → `Database#migrate`). To change the schema, add a new `V<n>__*.sql` — never
+  edit an applied migration.
+- **jOOQ classes are generated at build time from `V1__schema.sql`** via jOOQ's `DDLDatabase` (no
+  live DB needed to build). The `jooq-codegen-maven` plugin (`generate-sources` phase) emits
+  `org.scoutkit.meeting.jooq.*` under `target/generated-sources/jooq`. Keep `V1` portable, standard
+  DDL so the parser is happy; PostgreSQL-specific DDL (the FTS `tsvector`/GIN in `V2`) is **excluded
+  from codegen** and referenced via jOOQ plain SQL in `ConversationService#search`.
+- **Services use `BEANS.get(Database.class).db()`** (a shared `DSLContext`, dialect POSTGRES,
+  `renderSchema(false)`) over a HikariCP pool. Repositories are jOOQ, not raw JDBC.
+- **Verify the backend** with `mvn -f services/scoutkit-server/pom.xml -DskipTests package` (runs
+  codegen + compile). For a runtime check, point it at a local PostgreSQL (see root `README.md`).
 
 ## Verify a UI change
 

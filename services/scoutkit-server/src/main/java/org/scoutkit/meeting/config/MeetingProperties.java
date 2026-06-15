@@ -72,12 +72,12 @@ public final class MeetingProperties {
 
     @Override
     public String description() {
-      return "JDBC URL of the H2 database file.";
+      return "JDBC URL of the PostgreSQL database.";
     }
 
     @Override
     public String getDefaultValue() {
-      return "jdbc:h2:file:./data/meeting;AUTO_SERVER=TRUE";
+      return "jdbc:postgresql://localhost:5432/scoutkit";
     }
   }
 
@@ -94,7 +94,7 @@ public final class MeetingProperties {
 
     @Override
     public String getDefaultValue() {
-      return "sa";
+      return "scoutkit";
     }
   }
 
@@ -111,7 +111,7 @@ public final class MeetingProperties {
 
     @Override
     public String getDefaultValue() {
-      return "";
+      return "scoutkit";
     }
   }
 
