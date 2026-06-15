@@ -7,31 +7,37 @@ UI, the `services/scoutkit-server` (Eclipse Scout RT, Java) serves it and provid
 
 ## Outline-based UI
 
-The desktop uses `DisplayStyle.DEFAULT` (navigation + bench). A single **outline** in the navigation
-holds three top-level **table pages**; selecting a row drills down to a leaf page whose **detail form**
-is the chat (server-persisted messages + a docked LiveKit call) in the bench.
+The desktop uses `DisplayStyle.DEFAULT` (navigation + bench). **Two outlines** are offered via
+**outline view buttons** in the navigation: the **workspace** outline (conversations + contacts) and
+a dedicated **global-search** outline. Selecting a row in any table page drills down to a leaf page
+whose **detail form** is the chat (server-persisted messages + a docked LiveKit call) in the bench.
 
 ```
-Desktop (DisplayStyle.DEFAULT)
-└─ WorkspaceOutline                         navigation tree
-   ├─ ConversationTablePage  (PageWithTable)   table of DMs + meeting rooms
-   │    └─ ConversationPage   (leaf)            detailForm → ChatForm → ChatBox
-   ├─ ContactTablePage       (PageWithTable)   table of contacts
-   │    └─ ConversationPage   (leaf)            opens/creates the DM, then ChatForm → ChatBox
-   ├─ SearchTablePage        (PageWithTable)   full-text message search results
-   │    └─ ConversationPage   (leaf)            drills into the hit's conversation
-   │    └─ "Search…" menu     → SearchQueryForm (dialog)
-   └─ "New meeting" menu      → NewConversationForm (dialog)
+Desktop (DisplayStyle.DEFAULT)         outline view buttons: [Workspace] [Search]
+├─ WorkspaceOutline                         navigation tree
+│  ├─ ConversationTablePage  (PageWithTable)   table of DMs + meeting rooms
+│  │    └─ ConversationPage   (leaf)            detailForm → ChatForm → ChatBox
+│  │    └─ "New meeting" menu  → NewConversationForm (dialog)
+│  └─ ContactTablePage       (PageWithTable)   table of contacts
+│       └─ ConversationPage   (leaf)            opens/creates the DM, then ChatForm → ChatBox
+└─ SearchOutline                            global search over one shared query
+   ├─ title menu "Search…"   → SearchQueryForm (dialog; auto-opens when first activated)
+   ├─ ConversationSearchPage (PageWithTable)   matching conversations → ConversationPage
+   ├─ ContactSearchPage      (PageWithTable)   matching contacts      → ConversationPage
+   └─ MessageSearchPage      (PageWithTable)   full-text message hits → ConversationPage
 Desktop header menu "You: <name>" → NameForm (dialog)
 ```
 
 | File | Role |
 |------|------|
-| `main/Desktop.ts` | Desktop in `DEFAULT` display style; sets the outline; header menu to edit the display name. |
-| `main/WorkspaceOutline.ts` | The outline; creates the three top-level table pages. |
+| `main/Desktop.ts` | Desktop in `DEFAULT` display style; creates both outlines + their `OutlineViewButton`s; auto-opens the search prompt on first switch; header menu to edit the display name. |
+| `main/WorkspaceOutline.ts` | Workspace outline; creates the conversations + contacts table pages. |
+| `main/SearchOutline.ts` | Global-search outline; holds one shared `query`, a title-bar "Search…" menu (`SearchQueryForm`), and reloads its result pages when the query changes. |
 | `main/ConversationTablePage.ts` | `PageWithTable` listing conversations; `_loadTableData` → REST; `_createChildPage` → `ConversationPage`; "New meeting" menu. |
 | `main/ContactTablePage.ts` | `PageWithTable` listing contacts; drilling down opens/creates the contact's DM. |
-| `main/SearchTablePage.ts` | `PageWithTable` of full-text search hits (PostgreSQL FTS); "Search…" menu opens `SearchQueryForm`; drilling down opens the hit's conversation. |
+| `main/SearchResultPage.ts` | Abstract base for the search outline's result pages: table shell, reads the outline query (empty ⇒ no rows), `drillDownOnRowClick`, an AND-substring matcher. |
+| `main/ConversationSearchPage.ts` / `main/ContactSearchPage.ts` | Result pages filtering conversations / contacts client-side against the query. |
+| `main/MessageSearchPage.ts` | Result page running PostgreSQL full-text message search (FTS) server-side; drilling down opens the hit's conversation. |
 | `main/ConversationPage.ts` | Leaf page (no children, no detail table); `_createDetailForm` → `ChatForm`. |
 | `main/ChatForm.ts` | Detail form; resolves the conversation in `_load` and hosts the chat in a `WidgetField`. |
 | `main/ChatBox.ts` | The chat surface widget: message stream, composer, docked `LiveKitMeeting`. |

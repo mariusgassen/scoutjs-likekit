@@ -80,9 +80,14 @@ Build/run (see root `README.md` for the full table): `npm run dev:server` (Java 
 How this repo applies outlines (full map in [`apps/web/README.md`](apps/web/README.md)):
 
 ```
-Desktop (DEFAULT) → WorkspaceOutline
-  ├─ ConversationTablePage (PageWithTable) → ConversationPage (leaf) → ChatForm → ChatBox
-  └─ ContactTablePage      (PageWithTable) → ConversationPage (leaf, lazily creates the DM)
+Desktop (DEFAULT) — two outlines, switched via OutlineViewButtons
+  ├─ WorkspaceOutline
+  │    ├─ ConversationTablePage (PageWithTable) → ConversationPage (leaf) → ChatForm → ChatBox
+  │    └─ ContactTablePage      (PageWithTable) → ConversationPage (leaf, lazily creates the DM)
+  └─ SearchOutline — global search over one shared query (SearchResultPage subclasses)
+       ├─ ConversationSearchPage (PageWithTable) → ConversationPage
+       ├─ ContactSearchPage      (PageWithTable) → ConversationPage
+       └─ MessageSearchPage      (PageWithTable, PostgreSQL FTS) → ConversationPage
 ```
 
 ---

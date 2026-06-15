@@ -1,13 +1,13 @@
 import {Button, Form, FormModel, GroupBox, InitModelOf, StringField} from '@eclipse-scout/core';
 
 export interface SearchQueryFormModel extends FormModel {
-  /** Pre-fill the search field (the page's current query). */
+  /** Pre-fill the search field (the outline's current query). */
   query?: string;
 }
 
 /**
- * Small modal dialog to enter a full-text search query. On OK the trimmed {@link query} is exposed
- * so the opener (the {@link SearchTablePage}) can run the search and reload its result table.
+ * Small modal dialog to enter a global search query. On OK the trimmed {@link query} is exposed so
+ * the opener (the {@link SearchOutline}) can run the search and reload its result pages.
  */
 export class SearchQueryForm extends Form {
   declare model: SearchQueryFormModel;
