@@ -1,0 +1,97 @@
+name: CI
+
+# Build, typecheck and test every part of the full stack on PRs and pushes to main.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel superseded runs for the same ref (e.g. force-pushes to a PR).
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # --- Scout JS front end: build the widget lib, typecheck the app, run UI specs, build the site.
+  ui:
+    name: UI build & tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Build @scoutkit/livekit (apps/web depends on its types)
+        run: npm run build:lib
+      - name: Typecheck the web app
+        run: npx tsc -p apps/web/tsconfig.json
+      - name: UI tests (Karma single-run; skips cleanly until specs exist)
+        run: npm test --workspace=web
+        env:
+          # Karma's ChromeHeadless launcher uses the Chrome preinstalled on the runner.
+          CHROME_BIN: /usr/bin/google-chrome-stable
+      - name: Production web build (+ static site)
+        run: npm run build:web
+
+  # --- Scout RT (Java) back end: jOOQ codegen is hermetic (parses the Flyway DDL), so no DB needed.
+  backend:
+    name: Backend build & tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Build & test the Scout server
+        run: mvn -B -ntp -f services/scoutkit-server/pom.xml verify
+
+  # --- Full stack: build the single deployable image (web + REST + server in one container).
+  #     On main/tags this also pushes to GHCR so deploys (Coolify) can pull the image instead of
+  #     rebuilding it. The image is a PRIVATE GHCR package (inherits the repo's visibility).
+  image:
+    name: Full-stack image build
+    needs: [ui, backend]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: docker/setup-buildx-action@v4
+      - name: Log in to GHCR
+        # Only needed when we actually push (skipped on PRs from forks / pull_request events).
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Image metadata (tags & labels)
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/scoutkit-server
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,format=long
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+      - name: Build (and push on main/tags)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: services/scoutkit-server/Dockerfile
+          # PRs validate the multi-stage build (web + Java together); they do not publish.
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
