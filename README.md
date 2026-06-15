@@ -72,7 +72,7 @@ self-view, mic/camera toggle, screen sharing, and shareable invite links (`?c=<c
 
 ## Requirements
 
-- **Node.js ≥ 24.12** (required by Eclipse Scout 26.x) and npm — for the web app.
+- **Node.js ≥ 25** (Eclipse Scout 26.x requires ≥ 24.12) and npm — for the web app.
 - **JDK 21** and **Maven** — for the `scoutkit-server` backend.
 - **PostgreSQL** (the runtime database; the build itself needs none — jOOQ generates from the
   Flyway DDL). Easiest via Docker, or use the `postgres` service in docker-compose.
@@ -112,7 +112,7 @@ npm run build:lib                 # compile @scoutkit/livekit
 # terminal 1 — PostgreSQL (the real database; Flyway migrates it on first server start)
 docker run --rm -p 5432:5432 \
   -e POSTGRES_USER=scoutkit -e POSTGRES_PASSWORD=scoutkit -e POSTGRES_DB=scoutkit \
-  postgres:16-alpine
+  postgres:18-alpine
 
 # terminal 2 — LiveKit (requires the livekit-server binary or its Docker image)
 livekit-server --dev

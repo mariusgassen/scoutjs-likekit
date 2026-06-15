@@ -16,7 +16,7 @@ services:
   # PostgreSQL — the real database. Holds contacts, conversations and persistent chat (incl. the
   # full-text search index). Data survives restarts on the scoutkit-db volume.
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     environment:
       POSTGRES_DB: scoutkit
       POSTGRES_USER: scoutkit

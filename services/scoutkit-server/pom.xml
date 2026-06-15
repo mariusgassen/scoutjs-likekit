@@ -15,12 +15,12 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.release>21</maven.compiler.release>
     <org.eclipse.scout.rt.version>26.1.16</org.eclipse.scout.rt.version>
-    <java-jwt.version>4.4.0</java-jwt.version>
+    <java-jwt.version>4.5.2</java-jwt.version>
     <!-- Real database: PostgreSQL, accessed through jOOQ over a HikariCP pool; schema owned by Flyway. -->
-    <postgresql.version>42.7.4</postgresql.version>
-    <hikaricp.version>5.1.0</hikaricp.version>
-    <flyway.version>10.20.1</flyway.version>
-    <jooq.version>3.19.15</jooq.version>
+    <postgresql.version>42.7.11</postgresql.version>
+    <hikaricp.version>7.1.0</hikaricp.version>
+    <flyway.version>12.8.1</flyway.version>
+    <jooq.version>3.21.5</jooq.version>
   </properties>
 
   <dependencyManagement>
@@ -189,7 +189,7 @@
       <plugin>
         <groupId>io.smallrye</groupId>
         <artifactId>jandex-maven-plugin</artifactId>
-        <version>3.2.2</version>
+        <version>3.6.0</version>
         <executions>
           <execution>
             <id>make-index</id>
@@ -225,7 +225,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>3.5.0</version>
+        <version>3.6.3</version>
         <configuration>
           <mainClass>org.eclipse.scout.rt.app.Application</mainClass>
         </configuration>
