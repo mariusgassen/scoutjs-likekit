@@ -34,7 +34,7 @@ LiveKit room name.
 | Path | What |
 |------|------|
 | `packages/livekit` | Reusable `@scoutkit/livekit` Scout JS widget (`LiveKitMeeting`). Built with `tsc` to ESM. |
-| `apps/web` | Scout JS workspace app (`ChatWorkspace`): contacts, conversations, persistent chat, docked calls. Built with `scout-scripts`; the `scoutkit-server` serves the result. |
+| `apps/web` | Scout JS workspace app: an outline-based desktop (navigation + bench) with Conversations and Contacts table pages whose detail form is the chat (persistent messages + docked LiveKit call). Built with `scout-scripts`; the `scoutkit-server` serves the result. See [`apps/web/README.md`](apps/web/README.md) for the outline structure. |
 | `services/scoutkit-server` | **Eclipse Scout RT 26.1 Java backend** (embedded Jetty). Serves the built web app at `/` and the REST API at `/api` (Jersey), mints LiveKit tokens, and persists contacts/conversations/messages in embedded **H2**. Built with Maven. |
 | `infra/livekit/livekit.yaml` | Production LiveKit server config (ports + external IP). |
 | `docker-compose.yml` | Full stack: `livekit` + `scoutkit-server` (web app + API). |
