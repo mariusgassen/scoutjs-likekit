@@ -171,7 +171,7 @@ The UI already follows Scout layout conventions; verified component-by-component
 
 | Component | Layout approach | Verdict |
 |-----------|-----------------|---------|
-| `Desktop` | `DisplayStyle.DEFAULT`, single outline, header `Menu` | idiomatic |
+| `Desktop` | `DisplayStyle.COMPACT` on phones else `DEFAULT` (§9), single outline, header `Menu` | idiomatic |
 | `WorkspaceOutline` | three top-level `PageWithTable`s built in `_init` | idiomatic |
 | `*TablePage` | `PageWithTable`, `parent: this.outline`, hidden id column, `summary` column, `drillDownOnRowClick` | idiomatic |
 | `ConversationPage` | `PageWithNodes` leaf, `detailTableVisible=false`, `_createDetailForm` | idiomatic |
@@ -192,7 +192,36 @@ leaving empty space, with the existing column widths acting as weights + min-wid
 
 ---
 
-## 8. Verifying a UI change
+## 9. Mobile / compact desktop
+
+Scout's **device transformation** (the server-side `MobileDeviceTransformer` that sets the desktop
+to compact, moves field labels to top, etc.) is a **Scout Classic** feature and is **not available
+in a pure Scout JS app** like this one. So nothing switches the desktop into a mobile layout for us;
+left alone it always renders the full `DEFAULT` desktop (navigation **and** bench), which is why a
+phone showed the desktop layout.
+
+What *is* available in Scout JS:
+
+- **Compact desktop** — set `displayStyle: Desktop.DisplayStyle.COMPACT` ourselves. `Desktop._setDisplayStyle`
+  (verified in `desktop/Desktop.ts`) then: moves the header tool box into the **navigation**
+  (`navigation.setToolBoxVisible(true)`, `header.setToolBoxVisible(false)`), hides the bench's outline
+  content, and on the **outline** calls `setCompact(true)` + `setEmbedDetailContent(true)`. Result:
+  navigation **or** bench (never both), outline in breadcrumb mode embedding the detail content, so the
+  chat detail form is reachable from the navigation. The desktop auto-switches nav↔bench as views open/close
+  (`switchToBench`/`switchToNavigation`, `hideForm`).
+- **Device detection** — `Device.get().type === Device.Type.MOBILE` (also `.TABLET` / `.DESKTOP`). The
+  singleton is created on the App `prepare` event from `navigator.userAgent`. There is no
+  `isMobileDevice()` helper in 26.1 — compare `type` directly.
+- **Responsive group boxes** — pure Scout JS profits from the `ResponsiveManager` / `GroupBoxResponsiveHandler`
+  compact state (grid → 1 column, labels to top) automatically when a box gets narrow; no wiring needed.
+
+**Applied:** `Desktop._jsonModel()` picks `COMPACT` when `Device.get().type === Device.Type.MOBILE`,
+else `DEFAULT`. Tablets keep `DEFAULT` (the compact desktop is the phone form factor, matching Scout's
+`MAKE_DESKTOP_COMPACT` being a *mobile* transformation).
+
+---
+
+## 10. Verifying a UI change
 
 ```bash
 npm run build:lib                 # compile @scoutkit/livekit (apps/web depends on its types)
