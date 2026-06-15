@@ -25,7 +25,7 @@ export class MessageSearchPage extends SearchResultPage {
   }
 
   protected override _search(query: string): Promise<MessageHit[]> {
-    return this.api.searchMessages(query);
+    return this.api.searchMessages(query, this._searchLimit);
   }
 
   protected override _transformTableDataToTableRows(tableData: MessageHit[]): Record<string, any>[] {

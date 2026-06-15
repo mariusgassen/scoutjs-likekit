@@ -84,7 +84,8 @@ Desktop (DEFAULT) — two outlines, switched via OutlineViewButtons
   ├─ WorkspaceOutline
   │    ├─ ConversationTablePage (PageWithTable) → ConversationPage (leaf) → ChatForm → ChatBox
   │    └─ ContactTablePage      (PageWithTable) → ConversationPage (leaf, lazily creates the DM)
-  └─ SearchOutline — global search over one shared query (SearchResultPage subclasses)
+  └─ SearchOutline — extends Scout's SearchOutline; live field runs one shared query against the
+     │                backend search services (/api/search/*); SearchResultPage subclasses:
        ├─ ConversationSearchPage (PageWithTable) → ConversationPage
        ├─ ContactSearchPage      (PageWithTable) → ConversationPage
        └─ MessageSearchPage      (PageWithTable, PostgreSQL FTS) → ConversationPage

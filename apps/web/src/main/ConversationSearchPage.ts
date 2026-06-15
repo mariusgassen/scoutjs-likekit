@@ -4,10 +4,10 @@ import {SearchResultPage} from './SearchResultPage';
 import {Conversation, meetingApi, MeetingApi} from '../data/MeetingApi';
 
 /**
- * {@link SearchOutline} result page matching conversations (DMs and meeting rooms) against the
- * query. Conversations are a small, already-available data set, so the filtering happens client-side
- * over the title, last message and last author. Drilling into a row opens that conversation, reusing
- * the same {@link ConversationPage} / chat detail form as the workspace.
+ * {@link SearchOutline} result page matching conversations (DMs and meeting rooms) against the query
+ * via the backend search service (matches the title or a member's name/email). Drilling into a row
+ * opens that conversation, reusing the same {@link ConversationPage} / chat detail form as the
+ * workspace.
  */
 export class ConversationSearchPage extends SearchResultPage {
 
@@ -25,8 +25,7 @@ export class ConversationSearchPage extends SearchResultPage {
   }
 
   protected override _search(query: string): Promise<Conversation[]> {
-    return this.api.conversations().then(list =>
-      list.filter(conv => this._matchesQuery(query, conv.title, conv.lastMessage, conv.lastAuthor)));
+    return this.api.searchConversations(query, this._searchLimit);
   }
 
   protected override _transformTableDataToTableRows(tableData: Conversation[]): Record<string, any>[] {

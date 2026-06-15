@@ -52,11 +52,10 @@ export class Desktop extends ScoutDesktop {
       scout.create(OutlineViewButton, {parent: this, outline: this._searchOutline, text: 'Search', textVisible: true})
     ]);
     this.setOutline(workspaceOutline);
-    // Make the search outline feel like a global-search entry point: prompt for a query the first
-    // time it is activated (while still empty).
+    // Focus the search field whenever the search outline is activated, so the user can type right away.
     this.on('outlineChange', () => {
-      if (this.outline === this._searchOutline && !this._searchOutline.query) {
-        this._searchOutline.promptSearch();
+      if (this.outline === this._searchOutline) {
+        this._searchOutline.focusQueryField();
       }
     });
 

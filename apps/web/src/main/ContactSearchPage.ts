@@ -4,10 +4,10 @@ import {SearchResultPage} from './SearchResultPage';
 import {Contact, meetingApi, MeetingApi} from '../data/MeetingApi';
 
 /**
- * {@link SearchOutline} result page matching the workspace contact directory against the query. The
- * directory is small and already available, so the filtering happens client-side over the name,
- * email and status. Drilling into a contact opens (and lazily creates) the direct conversation with
- * them, reusing the same {@link ConversationPage} as the workspace contacts page.
+ * {@link SearchOutline} result page matching the workspace contact directory against the query via
+ * the backend search service (matches the name, email or status). Drilling into a contact opens (and
+ * lazily creates) the direct conversation with them, reusing the same {@link ConversationPage} as the
+ * workspace contacts page.
  */
 export class ContactSearchPage extends SearchResultPage {
 
@@ -24,8 +24,7 @@ export class ContactSearchPage extends SearchResultPage {
   }
 
   protected override _search(query: string): Promise<Contact[]> {
-    return this.api.contacts().then(list =>
-      list.filter(contact => this._matchesQuery(query, contact.name, contact.email, contact.status)));
+    return this.api.searchContacts(query, this._searchLimit);
   }
 
   protected override _transformTableDataToTableRows(tableData: Contact[]): Record<string, any>[] {
