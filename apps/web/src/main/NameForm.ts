@@ -6,7 +6,7 @@ export class NameForm extends Form {
 
   protected override _jsonModel(): FormModel {
     return {
-      title: 'Your name',
+      title: '${textKey:scoutkit.YourName}',
       displayHint: Form.DisplayHint.DIALOG,
       modal: true,
       rootGroupBox: {
@@ -16,14 +16,14 @@ export class NameForm extends Form {
           {
             id: 'name',
             objectType: StringField,
-            label: 'Display name',
+            label: '${textKey:scoutkit.DisplayName}',
             mandatory: true,
             maxLength: 40
           },
           {
             id: 'ok',
             objectType: Button,
-            label: 'Save',
+            label: '${textKey:scoutkit.Save}',
             systemType: Button.SystemType.OK,
             processButton: true,
             keyStroke: 'enter'
@@ -31,7 +31,7 @@ export class NameForm extends Form {
           {
             id: 'cancel',
             objectType: Button,
-            label: 'Cancel',
+            label: '${textKey:Cancel}',
             systemType: Button.SystemType.CANCEL,
             processButton: true
           }

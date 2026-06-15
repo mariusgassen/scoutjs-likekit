@@ -14,7 +14,7 @@ export class NewConversationForm extends Form {
 
   protected override _jsonModel(): FormModel {
     return {
-      title: 'New meeting',
+      title: '${textKey:scoutkit.NewMeeting}',
       displayHint: Form.DisplayHint.DIALOG,
       modal: true,
       rootGroupBox: {
@@ -24,14 +24,14 @@ export class NewConversationForm extends Form {
           {
             id: 'name',
             objectType: StringField,
-            label: 'Name',
+            label: '${textKey:Name}',
             mandatory: true,
             maxLength: 60
           },
           {
             id: 'members',
             objectType: TableField,
-            label: 'Invite',
+            label: '${textKey:scoutkit.Invite}',
             labelVisible: false,
             gridDataHints: {h: 6, weightY: 1, fillVertical: true},
             table: {
@@ -41,14 +41,14 @@ export class NewConversationForm extends Form {
               autoResizeColumns: true,
               columns: [
                 {id: 'id', objectType: Column, visible: false},
-                {id: 'name', objectType: Column, text: 'Contact', width: 260}
+                {id: 'name', objectType: Column, text: '${textKey:scoutkit.Contact}', width: 260}
               ]
             }
           },
           {
             id: 'ok',
             objectType: Button,
-            label: 'Create',
+            label: '${textKey:scoutkit.Create}',
             systemType: Button.SystemType.OK,
             processButton: true,
             keyStroke: 'enter'
@@ -56,7 +56,7 @@ export class NewConversationForm extends Form {
           {
             id: 'cancel',
             objectType: Button,
-            label: 'Cancel',
+            label: '${textKey:Cancel}',
             systemType: Button.SystemType.CANCEL,
             processButton: true
           }
@@ -81,7 +81,7 @@ export class NewConversationForm extends Form {
     const table = this._membersTable();
     const idColumn = table.columnById('id');
     const memberIds = table.checkedRows().map(r => idColumn.cellValue(r) as string);
-    const title = (this.widget('name', StringField).value || '').trim() || 'New meeting';
+    const title = (this.widget('name', StringField).value || '').trim() || this.session.text('scoutkit.NewMeeting');
     this.api.createConversation({type: 'group', title, memberIds})
       .then(conv => {
         this.createdConversation = conv;

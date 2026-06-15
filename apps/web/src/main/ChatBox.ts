@@ -42,11 +42,13 @@ export class ChatBox extends Widget {
     const $header = this.$container.appendDiv('cb-header');
     $header.appendDiv('cb-title').text(this.conversation.title || this.conversation.id);
     $header.appendDiv('cb-sub').text(this.conversation.type === 'direct'
-      ? 'Direct message'
-      : `${this.conversation.memberCount} member${this.conversation.memberCount === 1 ? '' : 's'} · meeting room`);
+      ? this.session.text('scoutkit.DirectMessage')
+      : this.session.text(
+        this.conversation.memberCount === 1 ? 'scoutkit.MembersMeetingRoomOne' : 'scoutkit.MembersMeetingRoomMany',
+        String(this.conversation.memberCount)));
     $header.appendDiv('cb-spacer');
     this.$callBtn = $header.appendElement('<button>', 'cb-btn cb-call-btn')
-      .text('Start call')
+      .text(this.session.text('scoutkit.StartCall'))
       .on('click', () => this._onToggleCall());
 
     this.$callDock = this.$container.appendDiv('cb-call-dock');
@@ -57,14 +59,14 @@ export class ChatBox extends Widget {
     const $composer = this.$container.appendDiv('cb-composer');
     this.$composerInput = $composer.appendElement('<input>', 'cb-composer-input')
       .attr('type', 'text')
-      .attr('placeholder', 'Message…')
+      .attr('placeholder', this.session.text('scoutkit.MessagePlaceholder'))
       .on('keydown', (e: JQuery.KeyDownEvent) => {
         if (e.which === 13) {
           this._onSend();
         }
       });
     $composer.appendElement('<button>', 'cb-btn cb-send-btn')
-      .text('Send')
+      .text(this.session.text('scoutkit.Send'))
       .on('click', () => this._onSend());
 
     this._loadMessages();
@@ -80,7 +82,7 @@ export class ChatBox extends Widget {
 
   protected _loadMessages(): void {
     this.$messages.empty();
-    this.$messages.appendDiv('cb-placeholder').text('Loading…');
+    this.$messages.appendDiv('cb-placeholder').text(this.session.text('scoutkit.Loading'));
     this.api.messages(this.conversation.id, 0)
       .then(messages => {
         if (!this.rendered) {
@@ -88,7 +90,7 @@ export class ChatBox extends Widget {
         }
         this.$messages.empty();
         if (messages.length === 0) {
-          this.$messages.appendDiv('cb-placeholder').text('No messages yet — say hello!');
+          this.$messages.appendDiv('cb-placeholder').text(this.session.text('scoutkit.NoMessagesYetGreeting'));
         }
         messages.forEach(m => this._appendMessage(m));
         this.lastTs = messages.reduce((max, m) => Math.max(max, m.ts), 0);
@@ -177,7 +179,7 @@ export class ChatBox extends Widget {
     this.meeting.on('left', () => this._endCall());
     this.$callDock.setVisible(true);
     this.meeting.render(this.$callDock);
-    this.$callBtn.text('End call').addClass('cb-call-active');
+    this.$callBtn.text(this.session.text('scoutkit.EndCall')).addClass('cb-call-active');
   }
 
   protected _endCall(): void {
@@ -189,7 +191,7 @@ export class ChatBox extends Widget {
       this.$callDock.setVisible(false);
     }
     if (this.$callBtn) {
-      this.$callBtn.text('Start call').removeClass('cb-call-active');
+      this.$callBtn.text(this.session.text('scoutkit.StartCall')).removeClass('cb-call-active');
     }
   }
 
@@ -207,7 +209,7 @@ export class ChatBox extends Widget {
   protected _showError(err: unknown): void {
     const text = err instanceof Error ? err.message : String(err);
     if (this.$messages) {
-      this.$messages.appendDiv('cb-error').text(`Error: ${text}`);
+      this.$messages.appendDiv('cb-error').text(this.session.text('scoutkit.ErrorX', text));
     }
   }
 }

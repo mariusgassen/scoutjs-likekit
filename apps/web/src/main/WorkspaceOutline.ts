@@ -12,11 +12,11 @@ import {SearchTablePage} from './SearchTablePage';
 export class WorkspaceOutline extends Outline {
 
   protected override _init(model: InitModelOf<this>): void {
-    model.title = model.title ?? 'Workspace';
+    model.title = model.title ?? '${textKey:scoutkit.Workspace}';
     model.nodes = model.nodes ?? [
-      {objectType: ConversationTablePage, text: 'Conversations'},
-      {objectType: ContactTablePage, text: 'Contacts'},
-      {objectType: SearchTablePage, text: 'Search'}
+      {objectType: ConversationTablePage, text: '${textKey:scoutkit.Conversations}'},
+      {objectType: ContactTablePage, text: '${textKey:scoutkit.Contacts}'},
+      {objectType: SearchTablePage, text: '${textKey:Search}'}
     ];
     super._init(model);
   }
