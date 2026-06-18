@@ -48,8 +48,8 @@ export class Desktop extends ScoutDesktop {
     const workspaceOutline = scout.create(WorkspaceOutline, {parent: this});
     this._searchOutline = scout.create(SearchOutline, {parent: this});
     this.setProperty('viewButtons', [
-      scout.create(OutlineViewButton, {parent: this, outline: workspaceOutline, text: 'Workspace', textVisible: true}),
-      scout.create(OutlineViewButton, {parent: this, outline: this._searchOutline, text: 'Search', textVisible: true})
+      scout.create(OutlineViewButton, {parent: this, outline: workspaceOutline, text: '${textKey:scoutkit.Workspace}', textVisible: true}),
+      scout.create(OutlineViewButton, {parent: this, outline: this._searchOutline, text: '${textKey:Search}', textVisible: true})
     ]);
     this.setOutline(workspaceOutline);
     // Focus the search field whenever the search outline is activated, so the user can type right away.

@@ -18,11 +18,11 @@ export class SearchOutline extends ScoutSearchOutline {
   query = '';
 
   protected override _init(model: InitModelOf<this>): void {
-    model.title = model.title ?? 'Search';
+    model.title = model.title ?? '${textKey:Search}';
     model.nodes = model.nodes ?? [
-      {objectType: ConversationSearchPage, text: 'Conversations'},
-      {objectType: ContactSearchPage, text: 'Contacts'},
-      {objectType: MessageSearchPage, text: 'Messages'}
+      {objectType: ConversationSearchPage, text: '${textKey:scoutkit.Conversations}'},
+      {objectType: ContactSearchPage, text: '${textKey:scoutkit.Contacts}'},
+      {objectType: MessageSearchPage, text: '${textKey:scoutkit.Messages}'}
     ];
     super._init(model);
     // ScoutSearchOutline owns the field, debounce and validation; it fires 'search' with a valid

@@ -17,9 +17,9 @@ export class ContactSearchPage extends SearchResultPage {
   protected override _createColumns(): ObjectOrChildModel<Column<any>>[] {
     return [
       {id: 'id', objectType: Column, visible: false},
-      {id: 'name', objectType: Column, text: 'Name', width: 200, summary: true},
-      {id: 'email', objectType: Column, text: 'Email', width: 240},
-      {id: 'status', objectType: Column, text: 'Status', width: 120}
+      {id: 'name', objectType: Column, text: '${textKey:Name}', width: 200, summary: true},
+      {id: 'email', objectType: Column, text: '${textKey:scoutkit.Email}', width: 240},
+      {id: 'status', objectType: Column, text: '${textKey:Status}', width: 120}
     ];
   }
 

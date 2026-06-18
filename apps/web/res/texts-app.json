@@ -3,6 +3,7 @@
     "scoutkit.Workspace": "Workspace",
     "scoutkit.Conversations": "Conversations",
     "scoutkit.Contacts": "Contacts",
+    "scoutkit.Messages": "Messages",
     "scoutkit.You": "You: {0}",
 
     "scoutkit.Conversation": "Conversation",
@@ -71,6 +72,7 @@
     "scoutkit.Workspace": "Arbeitsbereich",
     "scoutkit.Conversations": "Unterhaltungen",
     "scoutkit.Contacts": "Kontakte",
+    "scoutkit.Messages": "Nachrichten",
     "scoutkit.You": "Du: {0}",
 
     "scoutkit.Conversation": "Unterhaltung",

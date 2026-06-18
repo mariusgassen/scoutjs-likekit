@@ -17,10 +17,10 @@ export class MessageSearchPage extends SearchResultPage {
   protected override _createColumns(): ObjectOrChildModel<Column<any>>[] {
     return [
       {id: 'messageId', objectType: Column, visible: false},
-      {id: 'conversation', objectType: Column, text: 'Conversation', width: 180},
-      {id: 'author', objectType: Column, text: 'Author', width: 150},
-      {id: 'snippet', objectType: Column, text: 'Match', width: 380, summary: true},
-      {id: 'when', objectType: DateColumn, text: 'When', width: 150, format: 'dd.MM.yyyy HH:mm'}
+      {id: 'conversation', objectType: Column, text: '${textKey:scoutkit.Conversation}', width: 180},
+      {id: 'author', objectType: Column, text: '${textKey:scoutkit.Author}', width: 150},
+      {id: 'snippet', objectType: Column, text: '${textKey:scoutkit.Match}', width: 380, summary: true},
+      {id: 'when', objectType: DateColumn, text: '${textKey:scoutkit.When}', width: 150, format: 'dd.MM.yyyy HH:mm'}
     ];
   }
 
