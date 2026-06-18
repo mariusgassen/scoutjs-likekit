@@ -95,6 +95,17 @@ Desktop (DEFAULT) — two outlines, switched via OutlineViewButtons
 
 ## Conventions & gotchas
 
+- **Reuse before you rebuild — check for an existing abstraction first.** Before implementing a
+  feature from scratch, look for something ready to use or extend: (1) a Scout core widget / abstract
+  base class in `@eclipse-scout/core` (e.g. `SearchOutline`, `PageWithTable`/`PageWithNodes`,
+  `Table`, `Form`, the many `*Field`s, `SmartField`, `TileGrid`, `Menu`, `Lookup*` — search the
+  installed `node_modules/@eclipse-scout/core/src` and consult [`docs/scout-notes.md`](docs/scout-notes.md)
+  and the pinned references above); (2) an existing component in this repo
+  (`apps/web/src`, `packages/livekit`) that already does something similar and can be subclassed,
+  parameterized, or factored into a shared base. This repo deliberately extends Scout's own
+  `SearchOutline` and bases every list page on `PageWithTable` rather than reinventing them — match
+  that. Only write a feature from the ground up once you've confirmed nothing existing fits, and say
+  briefly what you checked.
 - **Scout JS is not React.** Build widgets with `scout.create(Type, {parent, ...})`; reference
   classes directly as `objectType` in models. Lifecycle: `_init` → `_render`/`_remove`.
 - **Model-injected properties** (set from the model in `_init`) use the definite-assignment
