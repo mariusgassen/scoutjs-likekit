@@ -12,6 +12,7 @@ so they don't have to be re-fetched each session (the docs site blocks automated
 |-------|--------------------------|
 | **Hello Scout JS Full Stack** (project layout / architecture) | https://eclipsescout.github.io/scout-docs/26.1/getstarted/helloscout-js-fullstack.html |
 | **Outline** (navigation, pages) | https://eclipsescout.github.io/scout-docs/26.1/technical-guide/user-interface/outline.html |
+| **Icons** (font icons, custom icon font) | https://eclipsescout.github.io/scout-docs/26.1/technical-guide/user-interface/icons.html |
 
 Related concept pages (same technical guide): `.../user-interface/desktop.html`,
 `.../user-interface/page.html`, `.../user-interface/form.html`, `.../user-interface/table.html`.
@@ -106,6 +107,18 @@ Desktop (DEFAULT) — two outlines, switched via OutlineViewButtons
   `SearchOutline` and bases every list page on `PageWithTable` rather than reinventing them — match
   that. Only write a feature from the ground up once you've confirmed nothing existing fits, and say
   briefly what you checked.
+- **Use a framework icon before adding your own.** Same reuse rule for icons. Scout ships a built-in
+  **font icon** set exposed as named constants on the `icons` module / `Icons` class in
+  `@eclipse-scout/core` (e.g. `Icons.SEARCH`, `Icons.PERSON`, `Icons.PENCIL`, `Icons.STAR`,
+  `Icons.REMOVE`). Set them on a widget via its `iconId` model property (string form `font:<char>` /
+  `font:<fontName> <char>` for raw glyphs) — most widgets (`Menu`/`Action`, `Button`, `TreeNode`/`Page`,
+  `Column`, `FormField`) accept `iconId`. **Check the `icons` constants (and the pinned *Icons* doc)
+  for a built-in glyph that fits before creating anything.** Only when nothing in the framework set
+  fits, add a **custom icon font**: build the font (e.g. IcoMoon) and `@font-face` it in the app's
+  LESS theme, register the new icon ids (subclass/extend `Icons` with the glyph chars), then reference
+  them with `iconId: 'font:<customFont> <char>'`. Prefer extending the existing custom font over
+  starting a new one; localize labels (not icons) per the i18n rules. Say which framework icons you
+  checked before adding a custom glyph.
 - **Scout JS is not React.** Build widgets with `scout.create(Type, {parent, ...})`; reference
   classes directly as `objectType` in models. Lifecycle: `_init` → `_render`/`_remove`.
 - **Model-injected properties** (set from the model in `_init`) use the definite-assignment
