@@ -40,9 +40,13 @@ The real database is **PostgreSQL**. The backend talks to it with **jOOQ** (type
 jOOQ's classes are generated **at build time from the Flyway migration DDL** (jOOQ `DDLDatabase`),
 so the build needs no running database.
 
-**Full-text message search** is the headline database feature: a PostgreSQL `tsvector` column
-(stored + GIN-indexed) is queried with `websearch_to_tsquery` / `ts_rank` / `ts_headline`, exposed
-at `GET /api/search?q=` and surfaced as a **Search** page in the UI (with highlighted snippets).
+**Global search** lives in its own **Search outline** (Scout's built-in `SearchOutline`): a live
+field at the top of the navigation runs one query against the backend search services
+(`/api/search/{conversations,contacts,messages}`) and shows the matches across three result table
+pages. **Full-text message search** is the headline database feature behind `/api/search/messages`:
+a PostgreSQL `tsvector` column (stored + GIN-indexed) queried with `websearch_to_tsquery` /
+`ts_rank` / `ts_headline` (ranked, highlighted snippets); conversations and contacts are matched with
+case-insensitive `ILIKE` over their columns.
 
 ## Monorepo layout
 
@@ -64,7 +68,9 @@ Anonymous access; unsafe methods require an `X-Requested-With` header (Scout ant
 | `GET /api/contacts` | Workspace contact directory. |
 | `GET` / `POST /api/conversations` | List / create DMs and group/meeting chats. |
 | `GET` / `POST /api/conversations/{id}/messages` | Persistent chat history (`?after=<ts>` to poll). |
-| `GET /api/search?q=&limit=` | Full-text message search (PostgreSQL FTS; ranked, highlighted). |
+| `GET /api/search/conversations?q=&limit=` | Global search — conversations by title or member (`ILIKE`). |
+| `GET /api/search/contacts?q=&limit=` | Global search — contacts by name, email or status (`ILIKE`). |
+| `GET /api/search/messages?q=&limit=` | Full-text message search (PostgreSQL FTS; ranked, highlighted). |
 
 ## Features
 

@@ -1,9 +1,11 @@
 package org.scoutkit.meeting.conversation;
 
+import static org.scoutkit.meeting.jooq.Tables.CONTACT;
 import static org.scoutkit.meeting.jooq.Tables.CONVERSATION;
 import static org.scoutkit.meeting.jooq.Tables.CONVERSATION_MEMBER;
 import static org.scoutkit.meeting.jooq.Tables.MESSAGE;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -11,6 +13,7 @@ import java.util.UUID;
 import org.eclipse.scout.rt.platform.ApplicationScoped;
 import org.eclipse.scout.rt.platform.BEANS;
 import org.eclipse.scout.rt.platform.util.StringUtility;
+import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.impl.DSL;
@@ -75,6 +78,42 @@ public class ConversationService {
       }
     });
     return readConversation(db, id, type, req.title(), now);
+  }
+
+  /**
+   * Global search over conversations: a conversation matches when its title or any member contact's
+   * name/email contains every (whitespace-separated) token of the query (case-insensitive). Backs
+   * {@code GET /api/search/conversations}.
+   */
+  public List<Conversation> searchConversations(String query, int limit) {
+    List<String> tokens = searchTokens(query);
+    if (tokens.isEmpty()) {
+      return List.of();
+    }
+    int max = Math.max(1, Math.min(limit, 100));
+    DSLContext db = db();
+
+    Condition condition = DSL.noCondition();
+    for (String token : tokens) {
+      String pattern = "%" + token + "%";
+      Condition memberMatch = DSL.exists(DSL.selectOne()
+          .from(CONVERSATION_MEMBER)
+          .join(CONTACT).on(CONTACT.ID.eq(CONVERSATION_MEMBER.CONTACT_ID))
+          .where(CONVERSATION_MEMBER.CONVERSATION_ID.eq(CONVERSATION.ID))
+          .and(DSL.lower(CONTACT.NAME).like(pattern).or(DSL.lower(CONTACT.EMAIL).like(pattern))));
+      condition = condition.and(DSL.lower(CONVERSATION.TITLE).like(pattern).or(memberMatch));
+    }
+
+    List<Conversation> result = db
+        .select(CONVERSATION.ID, CONVERSATION.TYPE, CONVERSATION.TITLE, CONVERSATION.CREATED_TS)
+        .from(CONVERSATION)
+        .where(condition)
+        .orderBy(CONVERSATION.TITLE)
+        .limit(max)
+        .fetch(r -> readConversation(db, r.get(CONVERSATION.ID), r.get(CONVERSATION.TYPE),
+            r.get(CONVERSATION.TITLE), r.get(CONVERSATION.CREATED_TS)));
+    result.sort((a, b) -> Long.compare(b.lastTs(), a.lastTs()));
+    return result;
   }
 
   public List<Message> messages(String conversationId, long afterTs) {
@@ -164,6 +203,16 @@ public class ConversationService {
         .map(r -> new Conversation(id, type, title, memberIds, memberIds.size(),
             r.get(MESSAGE.TEXT), r.get(MESSAGE.AUTHOR), r.get(MESSAGE.CREATED_TS)))
         .orElseGet(() -> new Conversation(id, type, title, memberIds, memberIds.size(), null, null, createdTs));
+  }
+
+  /** Lower-cased, non-blank, wildcard-stripped tokens of a search query (empty when nothing usable). */
+  public static List<String> searchTokens(String query) {
+    if (!StringUtility.hasText(query)) {
+      return List.of();
+    }
+    return Arrays.stream(query.toLowerCase().replace("*", "").trim().split("\\s+"))
+        .filter(StringUtility::hasText)
+        .toList();
   }
 
   protected DSLContext db() {

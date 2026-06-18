@@ -86,9 +86,19 @@ export class MeetingApi {
     return this._send('POST', `/conversations/${encodeURIComponent(conversationId)}/messages`, {author, text});
   }
 
-  /** PostgreSQL full-text search across all messages (`websearch_to_tsquery` syntax). */
+  /** Global search — conversations matched by title or member (backend `/search/conversations`). */
+  searchConversations(query: string, limit = 30): Promise<Conversation[]> {
+    return this._get(`/search/conversations?q=${encodeURIComponent(query)}&limit=${limit}`);
+  }
+
+  /** Global search — contacts matched by name, email or status (backend `/search/contacts`). */
+  searchContacts(query: string, limit = 30): Promise<Contact[]> {
+    return this._get(`/search/contacts?q=${encodeURIComponent(query)}&limit=${limit}`);
+  }
+
+  /** Global search — PostgreSQL full-text message search (`websearch_to_tsquery`; `/search/messages`). */
   searchMessages(query: string, limit = 30): Promise<MessageHit[]> {
-    return this._get(`/search?q=${encodeURIComponent(query)}&limit=${limit}`);
+    return this._get(`/search/messages?q=${encodeURIComponent(query)}&limit=${limit}`);
   }
 
   protected async _get<T>(path: string): Promise<T> {

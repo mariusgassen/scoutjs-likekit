@@ -147,6 +147,21 @@ definite size (a `WidgetField`, or a sized dock div). The other built-in layouts
 - **Detail form wiring** — `Page._initDetailForm()` forces `modal:false`, `closable:false`,
   `displayHint:'view'`, `displayViewId:'C'`, `showOnOpen:false`. So a detail form must *not* fight this
   (don't set it modal / dialog).
+- **Multiple outlines** — switch with `OutlineViewButton`s (`displayStyle:'TAB'`), rendered in the
+  navigation by the `ViewButtonBox`. A button matches the active outline by **instance identity**
+  (`OutlineViewButton.onOutlineChange` does `this.outline === desktop.outline`), so the button's
+  `outline` and the desktop's active `outline` must be the **same instance**. A static `_jsonModel`
+  can't share instances, so create the outlines + buttons in `Desktop._init` (`scout.create(...)`),
+  then `this.setProperty('viewButtons', [...])` (triggers `_setViewButtons`) and `setOutline(...)`.
+  The button's `_doAction` calls `desktop.setOutline`; listen to the desktop `outlineChange` event for
+  side effects (e.g. focusing a field). An outline shows a title menu bar for menus with
+  `menuTypes:[Tree.MenuType.Header]`.
+- **`SearchOutline`** — Scout ships a built-in `SearchOutline` (core, exported) that renders a search
+  field, clear icon, debounce, validation (`min/maxSearchFieldLength`, token length) and a status
+  line at the top of the navigation. Subclass it and react to its `'search'` / `'resetSearch'` events
+  rather than building a field by hand. Its result-count status aggregates a `SearchState` per page;
+  pages are `TreeNode`s (not widgets), so when not driving `SearchState`s, override
+  `_updateSearchStatus()` and call `setSearchStatus(...)` yourself after the pages have loaded.
 
 ---
 
@@ -171,16 +186,16 @@ The UI already follows Scout layout conventions; verified component-by-component
 
 | Component | Layout approach | Verdict |
 |-----------|-----------------|---------|
-| `Desktop` | `DisplayStyle.COMPACT` on phones else `DEFAULT` (§9), single outline, header `Menu` | idiomatic |
-| `WorkspaceOutline` | three top-level `PageWithTable`s built in `_init` | idiomatic |
-| `*TablePage` | `PageWithTable`, `parent: this.outline`, hidden id column, `summary` column, `drillDownOnRowClick` | idiomatic |
+| `Desktop` | `DisplayStyle.COMPACT` on phones else `DEFAULT` (§9), two outlines via `OutlineViewButton`s built in `_init`, header `Menu` | idiomatic |
+| `WorkspaceOutline` / `SearchOutline` | top-level `PageWithTable`s built in `_init`; `SearchOutline` extends Scout's built-in `SearchOutline` (live field) and runs one shared `query` against the backend search services | idiomatic |
+| `*TablePage` / `*SearchPage` | `PageWithTable`, `parent: this.outline`, hidden id column, `summary` column, `drillDownOnRowClick`; search result pages share the `SearchResultPage` base | idiomatic |
 | `ConversationPage` | `PageWithNodes` leaf, `detailTableVisible=false`, `_createDetailForm` | idiomatic |
 | `ChatForm` | `rootGroupBox` (borderless, 1 col) + `WidgetField` with `weightY:1, fillVertical` to fill the bench; group-box-body forced to `height:100%` in CSS | idiomatic |
 | `ChatBox` / `LiveKitMeeting` | `Widget` + `HtmlComponent` (NullLayout) + CSS flex/grid, sized by parent | idiomatic |
 | dialogs | `DIALOG`, modal, `gridColumnCount:1`, process buttons (`OK`/`CANCEL`) | idiomatic |
 
-**Change applied in this branch:** the detail tables (`ConversationTablePage`, `ContactTablePage`,
-`SearchTablePage`) and the contact-picker table in `NewConversationForm` now set
+**Change applied in an earlier branch:** the detail tables (`ConversationTablePage`, `ContactTablePage`,
+the search result pages) and the contact-picker table in `NewConversationForm` set
 **`autoResizeColumns: true`** so their columns fill the bench/dialog width responsively instead of
 leaving empty space, with the existing column widths acting as weights + min-widths (§4).
 
