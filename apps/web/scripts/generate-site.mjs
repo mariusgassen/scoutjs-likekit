@@ -49,6 +49,9 @@ rmSync(siteDir, {recursive: true, force: true});
 mkdirSync(siteDir, {recursive: true});
 cpSync(prodDir, join(siteDir, 'prod'), {recursive: true});
 cpSync(scoutFontsDir, join(siteDir, 'prod', 'fonts'), {recursive: true});
+// Our custom icon font (scoutkit-icons.woff, committed under res/fonts) lives next to Scout's fonts
+// so the theme CSS's relative url(fonts/...) resolves the same way.
+cpSync(join(resDir, 'fonts'), join(siteDir, 'prod', 'fonts'), {recursive: true});
 cpSync(resDir, siteDir, {recursive: true}); // brings config.js (and the raw index.html, overwritten next)
 writeFileSync(join(siteDir, 'index.html'), html);
 

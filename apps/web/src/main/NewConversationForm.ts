@@ -1,5 +1,6 @@
-import {Button, Column, Form, FormModel, GroupBox, icons, scout, StringField, Table, TableField} from '@eclipse-scout/core';
+import {Button, Column, Form, FormModel, GroupBox, scout, StringField, Table, TableField} from '@eclipse-scout/core';
 import {Conversation, meetingApi, MeetingApi} from '../data/MeetingApi';
+import {Icons} from './Icons';
 
 /**
  * Modal dialog to create a new group/meeting room: a name plus a checkable table of contacts to
@@ -49,7 +50,7 @@ export class NewConversationForm extends Form {
             id: 'ok',
             objectType: Button,
             label: '${textKey:scoutkit.Create}',
-            iconId: icons.GROUP_PLUS,
+            iconId: Icons.PLUS_CIRCLE,
             systemType: Button.SystemType.OK,
             processButton: true,
             keyStroke: 'enter'

@@ -1,6 +1,7 @@
-import {Column, icons, Menu, NumberColumn, Page, PageWithTable, scout, Table, TableRow} from '@eclipse-scout/core';
+import {Column, Device, Menu, NumberColumn, Page, PageWithTable, scout, Table, TableRow} from '@eclipse-scout/core';
 import {ConversationPage} from './ConversationPage';
 import {NewConversationForm} from './NewConversationForm';
+import {Icons} from './Icons';
 import {Conversation, meetingApi, MeetingApi} from '../data/MeetingApi';
 
 /**
@@ -37,7 +38,12 @@ export class ConversationTablePage extends PageWithTable {
           id: 'NewMenu',
           objectType: Menu,
           text: '${textKey:New}',
-          iconId: icons.GROUP_PLUS,
+          iconId: Icons.PLUS_CIRCLE,
+          // On phones the desktop is compact and this menu renders inside the navigation breadcrumb,
+          // where a verb label crowds the row — show it icon-only there (the text stays set so it is
+          // still the menu's accessible name / tap tooltip). Tablet/desktop keep the label. Mirrors
+          // the same `Device.Type.MOBILE` gate that drives the compact desktop in Desktop.ts.
+          textVisible: Device.get().type !== Device.Type.MOBILE,
           menuTypes: [Table.MenuType.EmptySpace],
           keyStroke: 'insert'
         }
