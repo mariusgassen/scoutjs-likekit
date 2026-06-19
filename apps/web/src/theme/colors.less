@@ -1,0 +1,60 @@
+/*
+ * ScoutKit "video platform" theme — variable overrides.
+ *
+ * This is a single-theme app (the `web-theme` webpack entry → src/index.less), so we follow the
+ * Scout-recommended "Option 1": start from Scout's built-in *dark* theme (a complete, tested dark
+ * scheme) and override LESS variables to retint the whole shell to a modern, deep video-platform
+ * look (think Teams/Discord/Meet dark chrome + a vivid indigo accent).
+ *
+ * Why this file must be imported AFTER `style/colors-dark` / `style/sizes-dark`: LESS variables are
+ * lazy-evaluated and the *last* declaration in the scope wins, so every Scout component rule (even
+ * the ones imported earlier from core) resolves these tokens to the values below. That is exactly
+ * how Scout's own dark theme layers on top of the default theme.
+ *
+ * Reskinning is done almost entirely through the gray ramp + accent palette so derived component
+ * colors follow automatically (see node_modules/@eclipse-scout/core/src/style/colors.less); only a
+ * few semantic tokens and radii are tuned directly. The light end of the gray ramp (gray-0..4) is
+ * left as the dark theme defines it — there it is used for *foreground* (text/labels/borders),
+ * while the dark end (gray-6..10) is used for the layered surfaces, which we deepen + neutralize.
+ */
+
+/* -------------------------------- */
+/* Surfaces — neutral deep slate    */
+/* -------------------------------- */
+/* gray-10 = body, header & navigation chrome (darkest); gray-8 = bench/tables/dialogs;
+   gray-9 = panels & nav body; gray-6-1 = popups/menus; gray-6 = solid hover. */
+@palette-gray-10: #0d0f13;
+@palette-gray-9: #14161b;
+@palette-gray-8: #1a1d23;
+@palette-gray-7: #21252d;
+@palette-gray-6-1: #262b34;
+@palette-gray-6: #313742;
+@palette-gray-5-1: #3d4350;
+@palette-gray-5: #6b7280;
+
+/* -------------------------------- */
+/* Accent — modern indigo           */
+/* -------------------------------- */
+/* accent-3 is the primary accent (links, selection, default buttons, focus). accent-0/1/2 derive
+   from it via lighten() in colors-dark (soft tints for subtle backgrounds); 4/5 are darker shades. */
+@accent-color-3: #5b6ef5;
+@accent-color-4: #4453d6;
+@accent-color-5: #3540b0;
+
+/* -------------------------------- */
+/* Semantic tweaks                  */
+/* -------------------------------- */
+/* Keep the header/navigation chrome a hair lighter than the pure-black body so the rounded bench
+   surface reads as elevated. */
+@desktop-header-background-color: @palette-gray-9;
+@desktop-navigation-background-color: @palette-gray-9;
+/* A crisper hairline between surfaces than the dark theme's very faint white fade. */
+@border-color: rgba(255, 255, 255, 0.09);
+
+/* -------------------------------- */
+/* Radii — softer, modern           */
+/* -------------------------------- */
+@border-radius: 4px;
+@control-border-radius: 6px;
+@control-popup-border-radius: 8px;
+@button-border-radius: 8px;

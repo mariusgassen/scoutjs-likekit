@@ -167,9 +167,26 @@ definite size (a `WidgetField`, or a sized dock div). The other built-in layouts
 
 ## 6. Styling & theming
 
-- LESS entry is `apps/web/src/index.less`; it imports `@eclipse-scout/core` styles, the LiveKit widget
-  styles, and `main/ChatBox`. Scout core variables live in
-  `node_modules/@eclipse-scout/core/src/style/colors.less` (+ `colors-dark.less` for the dark theme).
+- **ScoutKit ships ONE theme: a modern, dark "video platform" look** (deep neutral-slate chrome +
+  indigo accent). LESS entry is `apps/web/src/index.less`, the single `web-theme` webpack entry. It is
+  built the Scout-recommended way for a single-theme app (**Option 1** — override LESS variables
+  rather than registering a second named theme, which the static-site generator would also link):
+  - `@import "~@eclipse-scout/core/src/index"` then `style/colors-dark` + `style/sizes-dark` — start
+    from Scout's complete, tested **dark** theme (don't reinvent a dark scheme).
+  - `theme/colors.less` — **our variable overrides**, imported **after** the dark base. LESS variables
+    are lazy-evaluated (last declaration wins), so every core component rule — even the ones imported
+    earlier — resolves these tokens to our values. Reskinning goes almost entirely through the **gray
+    ramp** (`@palette-gray-6..10` = the layered surfaces) + **accent palette** (`@accent-color-3` =
+    primary indigo `#5b6ef5`; `0/1/2` derive via `lighten()`), so derived component colors follow.
+  - `theme/scoutkit.less` — small, additive component polish (header shadow, pill menu items, legible
+    header tool-box menus, livekit accent alignment); kept at modest specificity per the theming guide.
+- **Why dark fixed the old "can't see menus / buttons" report:** the default *light* theme renders
+  menus in the accent color and the navigation/header on a saturated accent fill, which read as
+  near-invisible/low-contrast. The cohesive dark theme gives menus indigo-on-dark (popups/menubars)
+  or light-on-dark (header tool box), and buttons an indigo fill/border — all clearly visible &
+  clickable. Don't go back to the unstyled light theme.
+- Scout core variables live in `node_modules/@eclipse-scout/core/src/style/colors.less` (+
+  `colors-dark.less` / `sizes-dark.less` for the dark base we extend).
 - Useful core variables when a widget should follow the Scout theme: `@background-color`,
   `@border-color`, `@text-color`, `@label-color`, `@active-color`, `@focus-border-color`,
   `@item-selection-background-color`, `@control-border-color`, `@control-border-radius`.
@@ -179,7 +196,10 @@ definite size (a `WidgetField`, or a sized dock div). The other built-in layouts
   — change the Scout theme/accent and the chat surface follows. It still uses scoped custom properties
   (not the raw LESS vars inline) so the values stay local to `.chat-box`.
 - `LiveKitMeeting` keeps its own self-contained dark video-surface palette (`--lk-*`) — it is a
-  **reusable package** that must not hard-depend on the host theme, so it is intentionally left as-is.
+  **reusable package** that must not hard-depend on the host theme, so its defaults are left as-is. The
+  host *does* retint its accent for cohesion via a higher-specificity rule (`.chat-box
+  .livekit-meeting { --lk-accent: @accent-color-3 }` in `theme/scoutkit.less`) — the cascading custom
+  property keeps the widget standalone-usable while following the app accent when embedded here.
 
 ---
 
@@ -219,8 +239,9 @@ styled via `.cb-btn-icon`) and the header avatar uses the Scout icon font direct
 ### Forward recommendations (not yet done)
 - **i18n** — UI strings are hard-coded. Scout's pattern is `session.text('key')` backed by NLS texts
   files. A larger change; left as a recommendation.
-- **Dark theme** — only the light theme is built (`web-theme` ← `index.less`). A dark theme would add a
-  second LESS entry importing `colors-dark.less` plus a runtime theme switch; left as a recommendation.
+- **Dark theme** — *done.* The single `web-theme` (← `index.less`) is now a dark "video platform"
+  theme built on Scout's dark base via variable overrides (§6). No runtime switch (single theme by
+  design); add a second named theme + `Desktop#setTheme` only if user-switchable themes are wanted.
 
 ---
 

@@ -1,3 +1,18 @@
+// ScoutKit theme entry (the single `web-theme` webpack entry).
+//
+// ScoutKit ships ONE theme: a modern, dark "video platform" look. We build it the Scout-recommended
+// way for a single-theme app — start from Scout core's *dark* theme (a complete, tested dark scheme),
+// then retint it via LESS variable overrides (theme/colors) and add light component polish
+// (theme/scoutkit). Because LESS variables are lazy-evaluated (last declaration wins), the overrides
+// must be imported AFTER colors-dark/sizes-dark so every core component rule resolves to our values.
 @import "~@eclipse-scout/core/src/index";
+@import "~@eclipse-scout/core/src/style/colors-dark";
+@import "~@eclipse-scout/core/src/style/sizes-dark";
+@import "theme/colors";
+
+// App + reusable widget styles (their tokens follow the variables overridden above).
 @import "~@scoutkit/livekit/src/LiveKitMeeting";
 @import "main/ChatBox";
+
+// Component polish (custom CSS, after everything else).
+@import "theme/scoutkit";

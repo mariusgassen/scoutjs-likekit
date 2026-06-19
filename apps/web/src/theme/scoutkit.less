@@ -1,0 +1,50 @@
+/*
+ * ScoutKit "video platform" theme — component polish.
+ *
+ * The heavy lifting is done by the variable overrides in `theme/colors.less` (the whole Scout shell
+ * is retinted through the gray ramp + accent palette). This file only adds a few additive, cosmetic
+ * rules for depth and cohesion. Per the Scout theming guide, custom rules that *override* core look
+ * are kept minimal and at modest specificity so they survive Scout upgrades.
+ */
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Lift the top chrome off the body with a hairline + soft shadow, like a video-platform app bar. */
+.desktop-header {
+  border-bottom: 1px solid @border-color;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+}
+
+/* The desktop title menu (header tool box, e.g. the "You: <name>" menu) sits on the dark chrome —
+   pin its text/icon to the light header color so it is always legible (defensive: this is the
+   surface the original theme rendered menus on with too little contrast). */
+.desktop-header .menubar .menu-item {
+  color: @desktop-header-color;
+
+  &:hover {
+    color: @desktop-header-color;
+    background-color: @hover-background-color;
+  }
+}
+
+/* Roomier, pill-shaped menu items in table/form menubars and context popups — closer to a modern
+   app's toolbar buttons. */
+.menubar .menu-item,
+.context-menu-popup .menu-item {
+  border-radius: @button-border-radius;
+}
+
+/* Give the bench (the chat surface area) a subtle inset divider from the navigation. */
+.desktop-bench {
+  border-left: 1px solid @border-color;
+}
+
+/* Align the docked LiveKit call surface with the app accent (the package ships its own self-contained
+   blue palette; the host may retint it via the cascading custom property). Higher specificity than
+   the widget's own `.livekit-meeting` rule so it wins. */
+.chat-box .livekit-meeting {
+  --lk-accent: @accent-color-3;
+}
