@@ -46,11 +46,14 @@ export class Desktop extends ScoutDesktop {
 
     // Two outlines, switched via outline view buttons. The buttons and the active outline must share
     // the same outline instances, so they are created here rather than in the (static) json model.
+    // View tabs are icon-only by Scout's default (ViewButton.textVisible === false); forcing a text
+    // label into the icon-sized tab breaks the navigation layout, so we keep the default and surface
+    // the label as a hover tooltip instead.
     const workspaceOutline = scout.create(WorkspaceOutline, {parent: this});
     this._searchOutline = scout.create(SearchOutline, {parent: this});
     this.setProperty('viewButtons', [
-      scout.create(OutlineViewButton, {parent: this, outline: workspaceOutline, text: '${textKey:scoutkit.Workspace}', textVisible: true, iconId: icons.FOLDER}),
-      scout.create(OutlineViewButton, {parent: this, outline: this._searchOutline, text: '${textKey:Search}', textVisible: true, iconId: icons.SEARCH})
+      scout.create(OutlineViewButton, {parent: this, outline: workspaceOutline, tooltipText: '${textKey:scoutkit.Workspace}', iconId: icons.FOLDER}),
+      scout.create(OutlineViewButton, {parent: this, outline: this._searchOutline, tooltipText: '${textKey:Search}', iconId: icons.SEARCH})
     ]);
     this.setOutline(workspaceOutline);
     // Focus the search field whenever the search outline is activated, so the user can type right away.

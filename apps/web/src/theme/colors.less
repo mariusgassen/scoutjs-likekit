@@ -33,13 +33,15 @@
 @palette-gray-5: #6b7280;
 
 /* -------------------------------- */
-/* Accent — modern indigo           */
+/* Accent — modern teal / emerald   */
 /* -------------------------------- */
 /* accent-3 is the primary accent (links, selection, default buttons, focus). accent-0/1/2 derive
-   from it via lighten() in colors-dark (soft tints for subtle backgrounds); 4/5 are darker shades. */
-@accent-color-3: #5b6ef5;
-@accent-color-4: #4453d6;
-@accent-color-5: #3540b0;
+   from it via lighten() in colors-dark (soft tints for subtle backgrounds); 4/5 are darker shades.
+   Teal pairs with the dark theme's near-black `@selected-color` (= gray-10) for high-contrast text
+   on selected rows / default buttons — unlike a mid indigo, on which that dark text read poorly. */
+@accent-color-3: #14b8a6;
+@accent-color-4: #0f9488;
+@accent-color-5: #0b7268;
 
 /* -------------------------------- */
 /* Semantic tweaks                  */
@@ -48,8 +50,18 @@
    surface reads as elevated. */
 @desktop-header-background-color: @palette-gray-9;
 @desktop-navigation-background-color: @palette-gray-9;
-/* A crisper hairline between surfaces than the dark theme's very faint white fade. */
-@border-color: rgba(255, 255, 255, 0.09);
+/* A crisper hairline between surfaces than the dark theme's very faint white fade. The 0.09 fade
+   was too low-contrast on the deep slate surfaces (faint, washed-out separation). */
+@border-color: rgba(255, 255, 255, 0.14);
+/* Menu labels: Scout colors menu-item text with @link-color (= the accent). On the deep dark
+   surfaces an accent-colored label is too low-contrast to read (the "menus not visible" bug), so
+   render menu labels in the bright neutral text color and let the accent live in the icon only. */
+@menu-item-color: @text-color;
+/* Make a selected table row clearly readable: the dark theme tints the row at only 9% accent, which
+   is nearly invisible on the deep surfaces — lift it so the teal selection actually reads, and keep
+   the solid accent border. */
+@item-selection-background-color: fade(@accent-color-3, 22%);
+@item-selection-nonfocus-background-color: fade(@accent-color-3, 12%);
 
 /* -------------------------------- */
 /* Radii — softer, modern           */
