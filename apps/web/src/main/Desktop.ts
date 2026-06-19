@@ -1,4 +1,4 @@
-import {Desktop as ScoutDesktop, DesktopModel, Device, InitModelOf, Menu, OutlineViewButton, scout} from '@eclipse-scout/core';
+import {Desktop as ScoutDesktop, DesktopModel, Device, icons, InitModelOf, Menu, OutlineViewButton, scout} from '@eclipse-scout/core';
 import {WorkspaceOutline} from './WorkspaceOutline';
 import {SearchOutline} from './SearchOutline';
 import {NameForm} from './NameForm';
@@ -34,7 +34,8 @@ export class Desktop extends ScoutDesktop {
       menus: [
         {
           id: 'NameMenu',
-          objectType: Menu
+          objectType: Menu,
+          iconId: icons.PERSON_SOLID
         }
       ]
     };
@@ -48,8 +49,8 @@ export class Desktop extends ScoutDesktop {
     const workspaceOutline = scout.create(WorkspaceOutline, {parent: this});
     this._searchOutline = scout.create(SearchOutline, {parent: this});
     this.setProperty('viewButtons', [
-      scout.create(OutlineViewButton, {parent: this, outline: workspaceOutline, text: '${textKey:scoutkit.Workspace}', textVisible: true}),
-      scout.create(OutlineViewButton, {parent: this, outline: this._searchOutline, text: '${textKey:Search}', textVisible: true})
+      scout.create(OutlineViewButton, {parent: this, outline: workspaceOutline, text: '${textKey:scoutkit.Workspace}', textVisible: true, iconId: icons.FOLDER}),
+      scout.create(OutlineViewButton, {parent: this, outline: this._searchOutline, text: '${textKey:Search}', textVisible: true, iconId: icons.SEARCH})
     ]);
     this.setOutline(workspaceOutline);
     // Focus the search field whenever the search outline is activated, so the user can type right away.

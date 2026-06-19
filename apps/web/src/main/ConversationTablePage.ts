@@ -1,4 +1,4 @@
-import {Column, Menu, NumberColumn, Page, PageWithTable, scout, Table, TableRow} from '@eclipse-scout/core';
+import {Column, icons, Menu, NumberColumn, Page, PageWithTable, scout, Table, TableRow} from '@eclipse-scout/core';
 import {ConversationPage} from './ConversationPage';
 import {NewConversationForm} from './NewConversationForm';
 import {Conversation, meetingApi, MeetingApi} from '../data/MeetingApi';
@@ -35,6 +35,7 @@ export class ConversationTablePage extends PageWithTable {
           id: 'NewMeetingMenu',
           objectType: Menu,
           text: '${textKey:scoutkit.NewMeeting}',
+          iconId: icons.GROUP_PLUS,
           menuTypes: [Table.MenuType.EmptySpace],
           keyStroke: 'insert'
         }

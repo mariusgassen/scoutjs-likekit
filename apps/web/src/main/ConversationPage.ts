@@ -1,4 +1,4 @@
-import {Form, InitModelOf, PageModel, PageWithNodes, scout} from '@eclipse-scout/core';
+import {Form, icons, InitModelOf, PageModel, PageWithNodes, scout} from '@eclipse-scout/core';
 import {ChatForm} from './ChatForm';
 import {Contact, Conversation} from '../data/MeetingApi';
 
@@ -27,6 +27,11 @@ export class ConversationPage extends PageWithNodes {
     this.detailTableVisible = false;
     if (!this.text) {
       this.text = this.conversation?.title || this.contact?.name || this.session.text('scoutkit.Conversation');
+    }
+    if (!this.iconId) {
+      // A contact page resolves to a direct message; a conversation can be a DM or a meeting room.
+      const direct = !!this.contact || this.conversation?.type === 'direct';
+      this.iconId = direct ? icons.PERSON_SOLID : icons.GROUP;
     }
   }
 

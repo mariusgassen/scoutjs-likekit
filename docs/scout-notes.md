@@ -173,10 +173,13 @@ definite size (a `WidgetField`, or a sized dock div). The other built-in layouts
 - Useful core variables when a widget should follow the Scout theme: `@background-color`,
   `@border-color`, `@text-color`, `@label-color`, `@active-color`, `@focus-border-color`,
   `@item-selection-background-color`, `@control-border-color`, `@control-border-radius`.
-- The two custom surfaces here (`ChatBox`, `LiveKitMeeting`) are deliberately self-contained, using
-  scoped CSS custom properties (`--cb-*`, `--lk-*`) rather than Scout theme tokens — intentional, since
-  they are app-styled chat/video surfaces, not form fields. If full Scout light/dark theme parity is
-  ever wanted, switch those custom properties to the core LESS variables above.
+- **`ChatBox` now follows the Scout theme.** Its scoped `--cb-*` custom properties are **derived from
+  the core LESS tokens** above (`@panel-background-color`, `@background-color`, `@border-color`,
+  `@accent-color-3`, `@text-color`, `@label-color`, `@error-color`, `@border-radius-*`) at compile time
+  — change the Scout theme/accent and the chat surface follows. It still uses scoped custom properties
+  (not the raw LESS vars inline) so the values stay local to `.chat-box`.
+- `LiveKitMeeting` keeps its own self-contained dark video-surface palette (`--lk-*`) — it is a
+  **reusable package** that must not hard-depend on the host theme, so it is intentionally left as-is.
 
 ---
 
@@ -199,11 +202,25 @@ the search result pages) and the contact-picker table in `NewConversationForm` s
 **`autoResizeColumns: true`** so their columns fill the bench/dialog width responsively instead of
 leaving empty space, with the existing column widths acting as weights + min-widths (§4).
 
+### Icons
+Widgets carry framework font icons (`icons.*` from `@eclipse-scout/core`) via their `iconId` model
+property — nothing custom was needed for the navigation/menus:
+- outline view buttons (`Desktop`): Workspace `icons.FOLDER`, Search `icons.SEARCH`; header name menu
+  `icons.PERSON_SOLID`.
+- workspace/search outline pages: Conversations `icons.LIST`, Contacts `icons.GROUP`, Messages
+  `icons.FILE`; the `ConversationPage` leaf picks `icons.PERSON_SOLID` (DM) vs `icons.GROUP` (room).
+- `New meeting` menu + `Create` button: `icons.GROUP_PLUS`.
+
+The Scout font set has **no phone/paper-plane glyph**, and `ChatBox` is a plain-HTML surface (not a
+Scout widget), so its call/send buttons use small **inline stroke SVGs** (`CB_ICONS` in `ChatBox.ts`,
+styled via `.cb-btn-icon`) and the header avatar uses the Scout icon font directly
+(`font-family: scoutIcons`, `content: '\E034'`/`'\E006'`) — no custom icon font was added.
+
 ### Forward recommendations (not yet done)
 - **i18n** — UI strings are hard-coded. Scout's pattern is `session.text('key')` backed by NLS texts
   files. A larger change; left as a recommendation.
-- **Theme parity** — optionally map the `--cb-*` / `--lk-*` custom properties to core LESS variables
-  (§6) so the chat/video surfaces follow the Scout light/dark theme.
+- **Dark theme** — only the light theme is built (`web-theme` ← `index.less`). A dark theme would add a
+  second LESS entry importing `colors-dark.less` plus a runtime theme switch; left as a recommendation.
 
 ---
 

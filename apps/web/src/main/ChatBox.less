@@ -5,11 +5,21 @@
 }
 
 .chat-box {
-  --cb-bg: #f5f6f8;
-  --cb-border: #e3e5ea;
-  --cb-accent: #3b82f6;
-  --cb-text: #1f2430;
-  --cb-text-dim: #6b7280;
+  // Theme parity: derive the chat surface palette from the Scout core LESS theme tokens
+  // (node_modules/@eclipse-scout/core/src/style/colors.less) rather than hard-coded hex, so the
+  // chat follows the framework theme/accent. Exposed as scoped custom properties for local use.
+  --cb-bg: @panel-background-color;
+  --cb-surface: @background-color;
+  --cb-border: @border-color;
+  --cb-accent: @accent-color-3;
+  --cb-accent-hover: darken(@accent-color-3, 8%);
+  --cb-on-accent: @text-inverted-color;
+  --cb-text: @text-color;
+  --cb-text-dim: @label-color;
+  --cb-error: @error-color;
+  --cb-danger: @palette-red-4;
+  --cb-radius: @border-radius-large;
+  --cb-radius-sm: @border-radius-medium;
 
   display: flex;
   flex-direction: column;
@@ -30,8 +40,41 @@
     align-items: center;
     gap: 12px;
     padding: 12px 18px;
-    background: #fff;
+    background: var(--cb-surface);
     border-bottom: 1px solid var(--cb-border);
+  }
+
+  // Avatar bubble carrying a Scout font icon (person for DMs, group for meeting rooms).
+  .cb-avatar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--cb-accent);
+    color: var(--cb-on-accent);
+
+    &::before {
+      font-family: scoutIcons;
+      font-size: 17px;
+      line-height: 1;
+    }
+  }
+
+  .cb-avatar-direct::before {
+    content: '\E034'; // icons.PERSON_SOLID
+  }
+
+  .cb-avatar-group::before {
+    content: '\E006'; // icons.GROUP
+  }
+
+  .cb-header-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
   }
 
   .cb-title {
@@ -81,8 +124,16 @@
   }
 
   .cb-error {
-    color: #b91c1c;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--cb-error);
     font-size: 12px;
+
+    &::before {
+      font-family: scoutIcons;
+      content: '\E060'; // icons.EXCLAMATION_MARK_BOLD
+    }
   }
 
   .cb-msg {
@@ -114,8 +165,8 @@
   .cb-msg-text {
     display: inline-block;
     padding: 8px 12px;
-    border-radius: 12px;
-    background: #fff;
+    border-radius: var(--cb-radius);
+    background: var(--cb-surface);
     border: 1px solid var(--cb-border);
     line-height: 1.4;
     text-align: left;
@@ -125,7 +176,7 @@
   .cb-msg-own .cb-msg-text {
     background: var(--cb-accent);
     border-color: var(--cb-accent);
-    color: #fff;
+    color: var(--cb-on-accent);
   }
 
   // --- composer -------------------------------------------------------------
@@ -135,7 +186,7 @@
     display: flex;
     gap: 8px;
     padding: 12px 18px;
-    background: #fff;
+    background: var(--cb-surface);
     border-top: 1px solid var(--cb-border);
   }
 
@@ -143,8 +194,10 @@
     flex: 1 1 auto;
     padding: 9px 12px;
     border: 1px solid var(--cb-border);
-    border-radius: 8px;
+    border-radius: var(--cb-radius-sm);
     font-size: 13px;
+    color: var(--cb-text);
+    background: var(--cb-surface);
 
     &:focus {
       outline: none;
@@ -155,17 +208,27 @@
   // --- buttons --------------------------------------------------------------
 
   .cb-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     padding: 8px 16px;
     border: 1px solid var(--cb-border);
-    border-radius: 8px;
-    background: #fff;
+    border-radius: var(--cb-radius-sm);
+    background: var(--cb-surface);
     color: var(--cb-text);
     cursor: pointer;
     font-size: 13px;
     white-space: nowrap;
 
     &:hover {
-      background: #f3f4f6;
+      background: var(--cb-bg);
+    }
+
+    // Inline SVG icons inherit the button text color and scale with the font.
+    .cb-btn-icon {
+      width: 16px;
+      height: 16px;
+      flex: 0 0 auto;
     }
   }
 
@@ -173,15 +236,15 @@
   .cb-send-btn {
     background: var(--cb-accent);
     border-color: var(--cb-accent);
-    color: #fff;
+    color: var(--cb-on-accent);
 
     &:hover {
-      background: #2f6fe0;
+      background: var(--cb-accent-hover);
     }
   }
 
   .cb-call-btn.cb-call-active {
-    background: #d63b3b;
-    border-color: #d63b3b;
+    background: var(--cb-danger);
+    border-color: var(--cb-danger);
   }
 }
