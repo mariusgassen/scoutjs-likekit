@@ -245,6 +245,101 @@ styled via `.cb-btn-icon`) and the header avatar uses the Scout icon font direct
 
 ---
 
+## 8. How-Tos (distilled from the `scout.docs` `howtos` module)
+
+Condensed from Eclipse Scout's official how-to guides (the `docs/modules/howtos` module of
+`eclipse-scout/scout.docs`, 26.1 branch, commit `c42c059`). Only the **Scout JS** patterns relevant
+to this repo are kept; the Scout *Classic* guides (`JsForm`/`JsPage` embedding, the Java chart/smart-field
+variants) are noted as **not applicable** at the bottom.
+
+### 8.1 REST service in a `PageWithTable` (the canonical data-loading pattern)
+
+This is exactly what every list page here does (`ConversationTablePage`, `*SearchPage`, …). Upstream's
+idiomatic shape:
+
+- **`_loadTableData(searchFilter)`** returns a `JQuery.Promise` of the response DO. Upstream uses
+  `ajax.postDataObject(url, restriction)` (Scout's `ajax` helper already returns a `JQuery.Promise` and
+  (de)serializes `@typeName`'d DataObjects). **This repo instead** uses native `fetch` in
+  `MeetingApi.ts` and bridges to a `JQuery.Promise` with `$.Deferred()` / `$.resolvedPromise` (see §5 /
+  CLAUDE.md) — both are valid; `ajax.postDataObject` is the option if we ever want DO (de)serialization
+  for free.
+- **Endpoint URLs** — upstream resolves them via `systems.getOrCreate().getEndpointUrl('<system>',
+  '<defaultPath>')` instead of hard-coding. The 2nd arg is the fallback path matching the Java
+  `@Path`. (This repo centralizes URLs in `MeetingApi.ts` instead.)
+- **Row mapping** — `_transformTableDataToTableRows(data)` maps each response item to
+  `{data: <raw>, cells: [<col0>, <col1>, …]}`; cells are **positional**, aligned to the column order in
+  the model. Keep the raw object on `row.data` so `_createChildPage(row)` can read it.
+- **Server-side row limiting** — wrap the filter with **`this._withMaxRowCountContribution(searchFilter)`**
+  before sending; it attaches `MaxRowCountContributionDo` (the table's `maxRowCount`) so the server limits
+  the query and reports "more available" back via `LimitedResultInfoContributionDo`. Set `maxRowCount` on
+  the `detailTable` model.
+- **REST convention** — list endpoints use **`POST`** (not `GET`) so the restriction object travels in the
+  body (richer than a query string); `@Consumes`/`@Produces` JSON; the resource is mounted under `/api/*`.
+  Matches this repo's `/api/*` services.
+- **Client-side DataObjects** — declare with `@typeName('<ns.Name>') class Foo extends BaseDoEntity { … }`;
+  the `typeName` **and attribute names must match the Java `DoEntity`** for (de)serialization. (This repo's
+  REST types are plain TS interfaces in `MeetingApi.ts`, which is fine since it doesn't use `postDataObject`.)
+
+### 8.2 Search form for a table page
+
+Upstream attaches search to a table page via a **`SearchFormTableControl`** whose `form` is a `Form`
+subclass (not a dialog):
+
+- The form's group box carries a **`SearchMenu`** + **`ResetMenu`** — clicking them auto-reloads the
+  table, no manual wiring.
+- Override **`exportData()`** to build the restriction DO from field values, and **`importData()`** to
+  push restriction values back onto the fields. On each reload the page exports the form's data and uses
+  it as the `searchFilter` passed to `_loadTableData`.
+- > This repo took a **different, also-idiomatic** route: it extends Scout's built-in **`SearchOutline`**
+  > with a single live query field shared across result pages (see §5 / CLAUDE.md) rather than a
+  > per-page `SearchFormTableControl`. Use the table-control pattern only if a page needs its own
+  > structured multi-field filter.
+
+### 8.3 Custom `FormField` (the "FlipCard" how-to) — relevant to our custom widgets
+
+The pattern behind custom surfaces like `ChatBox` / `LiveKitMeeting` (though those extend `Widget`, not
+`FormField`). To build a **field**:
+
+- `extends FormField`; in **`_render()`**: `this.addContainer(this.$parent, '<css-class>')` →
+  `this.addLabel()` → build your DOM and `this.addField($field)` (exposes it as `this.$field`) →
+  `this.addMandatoryIndicator()` → `this.addStatus()`.
+- **`_renderProperties()`** (call `super` first) does the *initial* DOM application — one
+  `_render<Prop>()` method per model property.
+- Reactive updates: public `setX(v)` → `this.setProperty('x', v)` → framework calls your `_renderX()`.
+- **`_remove()`** (call `super`) must null out retained jQuery refs (`this.$card = null` …) to avoid leaks.
+- Register the class in `index.ts` (`export *`) and its LESS in `index.less` (`@import`), then reference it
+  in a model via `objectType: MyField`.
+- `_render()`/CSS use jQuery — `@eclipse-scout/core` re-exports it; add `jquery` + `@types/jquery` if a
+  package consumes it directly.
+
+### 8.4 Charts (only if we ever add data-viz)
+
+Charts are a **separate module** — `@eclipse-scout/chart` (npm) — not in core. Setup: add the dep, an
+`import * as chart from '@eclipse-scout/chart'` in the entry file, and `@import "~@eclipse-scout/chart/src/index"`
+in the theme LESS. Then `scout.create('Chart', {parent})`, feed it `chart.setData({axes, chartValueGroups})`
+and `chart.setConfig({type: Chart.Type.BAR, options:{colorScheme, scales, clickable, checkable}})`; handle
+`chart.on('valueClick', …)`; `chart.checkedItems` holds checked segments. Custom color schemes are LESS
+(`#scout.chart-auto-colors(...)`), usable even for `<canvas>` charts. Not currently used here.
+
+### 8.5 SmartField colors/styles from a lookup row
+
+If we add a `SmartField`/`Lookup*` with per-row coloring: since Scout 8 the lookup row's **`cssClass`**
+is auto-applied to the `.form-field` DIV, so prefer **styling via LESS** (`.form-field.<class> > .field`,
+`.table-row.<class>`) over copying `backgroundColor`/`foregroundColor` onto the field. The old auto-copy of
+color/font/tooltip from lookup row → field was removed; do it explicitly only when CSS can't.
+
+### 8.6 Not applicable to this repo (Scout Classic only)
+
+- **`JsForm` / `JsPage`** (`AbstractJsForm`, `AbstractJsPage`, `JsPageHelper`, `getConfiguredJsFormObjectType`)
+  exist to embed Scout JS forms/pages inside a **Java Scout Classic** outline whose state lives on the UI
+  server. This repo is **pure Scout JS** (no Java client/outline), so build pages directly as
+  `PageWithTable`/`PageWithNodes` (§5) — there is nothing to wrap. The `importData`/`exportData` and
+  `_loadTableData`/`_transformTableDataToTableRows` contracts shown there are the *same* ones we already
+  use; only the Java wrapper is irrelevant.
+- The **Java** chart and smart-field how-tos (Classic) are superseded by the JS equivalents above.
+
+---
+
 ## 9. Mobile / compact desktop
 
 Scout's **device transformation** (the server-side `MobileDeviceTransformer` that sets the desktop
