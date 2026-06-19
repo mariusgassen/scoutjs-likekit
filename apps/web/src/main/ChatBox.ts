@@ -5,6 +5,17 @@ import {userIdentity} from '../data/UserIdentity';
 
 const POLL_MS = 2500;
 
+/**
+ * Inline SVG glyphs for the chat action buttons (call, send). The Scout font-icon set
+ * (`icons.*`) has no phone/paper-plane glyph and this is a plain-HTML surface (not a Scout widget),
+ * so small stroke icons are inlined here rather than adding a custom icon font. They inherit the
+ * button's `currentColor` and scale with the font size via the `.cb-btn-icon` class.
+ */
+const CB_ICONS = {
+  phone: '<svg class="cb-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>',
+  send: '<svg class="cb-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>'
+} as const;
+
 export interface ChatBoxModel extends WidgetModel {
   /** The conversation this chat box is bound to. Required. */
   conversation?: Conversation;
@@ -40,16 +51,19 @@ export class ChatBox extends Widget {
     this.htmlComp = HtmlComponent.install(this.$container, this.session);
 
     const $header = this.$container.appendDiv('cb-header');
-    $header.appendDiv('cb-title').text(this.conversation.title || this.conversation.id);
-    $header.appendDiv('cb-sub').text(this.conversation.type === 'direct'
+    const direct = this.conversation.type === 'direct';
+    $header.appendDiv('cb-avatar ' + (direct ? 'cb-avatar-direct' : 'cb-avatar-group'));
+    const $headerText = $header.appendDiv('cb-header-text');
+    $headerText.appendDiv('cb-title').text(this.conversation.title || this.conversation.id);
+    $headerText.appendDiv('cb-sub').text(direct
       ? this.session.text('scoutkit.DirectMessage')
       : this.session.text(
         this.conversation.memberCount === 1 ? 'scoutkit.MembersMeetingRoomOne' : 'scoutkit.MembersMeetingRoomMany',
         String(this.conversation.memberCount)));
     $header.appendDiv('cb-spacer');
     this.$callBtn = $header.appendElement('<button>', 'cb-btn cb-call-btn')
-      .text(this.session.text('scoutkit.StartCall'))
       .on('click', () => this._onToggleCall());
+    this._renderCallButton(false);
 
     this.$callDock = this.$container.appendDiv('cb-call-dock');
     this.$callDock.setVisible(false);
@@ -66,7 +80,7 @@ export class ChatBox extends Widget {
         }
       });
     $composer.appendElement('<button>', 'cb-btn cb-send-btn')
-      .text(this.session.text('scoutkit.Send'))
+      .html(CB_ICONS.send + `<span class="cb-btn-label">${this.session.text('scoutkit.Send')}</span>`)
       .on('click', () => this._onSend());
 
     this._loadMessages();
@@ -179,7 +193,7 @@ export class ChatBox extends Widget {
     this.meeting.on('left', () => this._endCall());
     this.$callDock.setVisible(true);
     this.meeting.render(this.$callDock);
-    this.$callBtn.text(this.session.text('scoutkit.EndCall')).addClass('cb-call-active');
+    this._renderCallButton(true);
   }
 
   protected _endCall(): void {
@@ -191,8 +205,16 @@ export class ChatBox extends Widget {
       this.$callDock.setVisible(false);
     }
     if (this.$callBtn) {
-      this.$callBtn.text(this.session.text('scoutkit.StartCall')).removeClass('cb-call-active');
+      this._renderCallButton(false);
     }
+  }
+
+  /** Render the call button's icon + label for the current call state (start vs. active/end). */
+  protected _renderCallButton(active: boolean): void {
+    const label = this.session.text(active ? 'scoutkit.EndCall' : 'scoutkit.StartCall');
+    this.$callBtn
+      .html(CB_ICONS.phone + `<span class="cb-btn-label">${label}</span>`)
+      .toggleClass('cb-call-active', active);
   }
 
   // --- helpers --------------------------------------------------------------

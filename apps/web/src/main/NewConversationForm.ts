@@ -1,4 +1,4 @@
-import {Button, Column, Form, FormModel, GroupBox, scout, StringField, Table, TableField} from '@eclipse-scout/core';
+import {Button, Column, Form, FormModel, GroupBox, icons, scout, StringField, Table, TableField} from '@eclipse-scout/core';
 import {Conversation, meetingApi, MeetingApi} from '../data/MeetingApi';
 
 /**
@@ -49,6 +49,7 @@ export class NewConversationForm extends Form {
             id: 'ok',
             objectType: Button,
             label: '${textKey:scoutkit.Create}',
+            iconId: icons.GROUP_PLUS,
             systemType: Button.SystemType.OK,
             processButton: true,
             keyStroke: 'enter'

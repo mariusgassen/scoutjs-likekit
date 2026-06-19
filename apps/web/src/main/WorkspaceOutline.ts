@@ -1,4 +1,4 @@
-import {InitModelOf, Outline} from '@eclipse-scout/core';
+import {icons, InitModelOf, Outline} from '@eclipse-scout/core';
 import {ConversationTablePage} from './ConversationTablePage';
 import {ContactTablePage} from './ContactTablePage';
 
@@ -14,8 +14,8 @@ export class WorkspaceOutline extends Outline {
   protected override _init(model: InitModelOf<this>): void {
     model.title = model.title ?? '${textKey:scoutkit.Workspace}';
     model.nodes = model.nodes ?? [
-      {objectType: ConversationTablePage, text: '${textKey:scoutkit.Conversations}'},
-      {objectType: ContactTablePage, text: '${textKey:scoutkit.Contacts}'}
+      {objectType: ConversationTablePage, text: '${textKey:scoutkit.Conversations}', iconId: icons.LIST},
+      {objectType: ContactTablePage, text: '${textKey:scoutkit.Contacts}', iconId: icons.GROUP}
     ];
     super._init(model);
   }
