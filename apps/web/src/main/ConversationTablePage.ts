@@ -6,7 +6,7 @@ import {Conversation, meetingApi, MeetingApi} from '../data/MeetingApi';
 /**
  * Top-level outline page listing all conversations (DMs and group/meeting rooms) in a table.
  * Selecting a row drills down to the {@link ConversationPage} for that conversation; an empty-space
- * "New meeting" menu opens the {@link NewConversationForm} to create a group/meeting room.
+ * "New" menu opens the {@link NewConversationForm} to create a group/meeting room.
  */
 export class ConversationTablePage extends PageWithTable {
 
@@ -32,9 +32,11 @@ export class ConversationTablePage extends PageWithTable {
       ],
       menus: [
         {
-          id: 'NewMeetingMenu',
+          // In the conversations context a plain "New" reads better than "New meeting"; reuse
+          // Scout core's shared `New` text key rather than an app-specific one.
+          id: 'NewMenu',
           objectType: Menu,
-          text: '${textKey:scoutkit.NewMeeting}',
+          text: '${textKey:New}',
           iconId: icons.GROUP_PLUS,
           menuTypes: [Table.MenuType.EmptySpace],
           keyStroke: 'insert'
@@ -45,7 +47,7 @@ export class ConversationTablePage extends PageWithTable {
 
   protected override _initDetailTable(table: Table): void {
     super._initDetailTable(table);
-    table.widget('NewMeetingMenu', Menu).on('action', () => this._onNewMeeting());
+    table.widget('NewMenu', Menu).on('action', () => this._onNewMeeting());
   }
 
   protected override _loadTableData(searchFilter: any): JQuery.Promise<any> {
