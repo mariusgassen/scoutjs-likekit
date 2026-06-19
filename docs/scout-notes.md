@@ -224,17 +224,44 @@ leaving empty space, with the existing column widths acting as weights + min-wid
 
 ### Icons
 Widgets carry framework font icons (`icons.*` from `@eclipse-scout/core`) via their `iconId` model
-property — nothing custom was needed for the navigation/menus:
+property:
 - outline view buttons (`Desktop`): Workspace `icons.FOLDER`, Search `icons.SEARCH`; header name menu
   `icons.PERSON_SOLID`.
 - workspace/search outline pages: Conversations `icons.LIST`, Contacts `icons.GROUP`, Messages
   `icons.FILE`; the `ConversationPage` leaf picks `icons.PERSON_SOLID` (DM) vs `icons.GROUP` (room).
-- `New meeting` menu + `Create` button: `icons.GROUP_PLUS`.
+  Reviewed against the full `scoutIcons` set (95 glyphs) — these are the best-fitting built-ins (the
+  core font has no chat-bubble / envelope glyph), so they were kept.
+
+**Standard action-icon glyphs (project rule — see CLAUDE.md):** new/create → **plus-in-circle**,
+edit → **pencil** (`icons.PENCIL`), delete → **trash can**. The Scout core font has **no
+plus-in-circle and no trash-can** (verified by dumping the `scoutIcons` cmap), so those two are served
+from a small **custom icon font**:
+- `apps/web/res/fonts/scoutkit-icons.woff` — committed binary, built by
+  `apps/web/scripts/build-icon-font.py` (fontTools) from FontAwesome-Free *solid* outlines, glyphs at
+  `U+E900` (plus-circle) / `U+E901` (trash).
+- `@font-face` (family `scoutkit-icons`) + the `.font-scoutkit-icons { font-family }` mapping live in
+  `theme/scoutkit.less`. Scout tags a non-default-font icon element with the `font-<fontName>` class
+  (`IconDesc#cssClass`) but ships no family rule for it, so the theme supplies one (it wins because it
+  is imported last).
+- ids are exposed as `Icons.PLUS_CIRCLE` / `Icons.TRASH` in `apps/web/src/main/Icons.ts` (which
+  re-exports the core `icons` plus these). The `New` menu (`ConversationTablePage`) and the `Create`
+  button (`NewConversationForm`) use `Icons.PLUS_CIRCLE`.
+- the static-site generator (`scripts/generate-site.mjs`) copies `res/fonts/*` into `prod/fonts/`
+  next to Scout's own fonts so the theme CSS's relative `url(fonts/…)` resolves at runtime.
 
 The Scout font set has **no phone/paper-plane glyph**, and `ChatBox` is a plain-HTML surface (not a
 Scout widget), so its call/send buttons use small **inline stroke SVGs** (`CB_ICONS` in `ChatBox.ts`,
 styled via `.cb-btn-icon`) and the header avatar uses the Scout icon font directly
-(`font-family: scoutIcons`, `content: '\E034'`/`'\E006'`) — no custom icon font was added.
+(`font-family: scoutIcons`, `content: '\E034'`/`'\E006'`).
+
+**Compact-mode (mobile) navigation tweaks** (`theme/scoutkit.less`, scoped to
+`.compact.outline.breadcrumb`): Scout lays each breadcrumb node out as a flex row with
+`align-items: start` and bumps the node icon to 16px while keeping the 15px font-icon line-height, so
+the glyph read a touch high next to the label — the theme centers the row items (`align-items: center`)
+and lets the icon box hug its glyph (`line-height: 1`, no vertical padding). The per-page **action
+menus** (e.g. the `New` menu) are set **icon-only on phones** via `textVisible: Device.get().type !==
+Device.Type.MOBILE` (the `text` stays set as the accessible name / tap tooltip); the header identity
+menu (`NameMenu`) keeps its label.
 
 ### Forward recommendations (not yet done)
 - **i18n** — UI strings are hard-coded. Scout's pattern is `session.text('key')` backed by NLS texts

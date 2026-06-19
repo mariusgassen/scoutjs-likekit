@@ -7,6 +7,25 @@
  * are kept minimal and at modest specificity so they survive Scout upgrades.
  */
 
+/* Custom icon font for the standard action glyphs the Scout core font lacks (plus-in-circle, trash
+   can — see the action-icon rule in CLAUDE.md). The .woff is a committed asset under res/fonts
+   (built by scripts/build-icon-font.py); the static-site generator serves it from prod/fonts next to
+   Scout's own fonts, so the relative url() matches the theme CSS location at runtime. Referenced via
+   the `Icons` constants (`font:scoutkit-icons <char>`) in src/main/Icons.ts. */
+@font-face {
+  font-family: scoutkit-icons;
+  font-weight: normal;
+  font-style: normal;
+  src: url('fonts/scoutkit-icons.woff') format('woff');
+}
+
+/* Scout tags an icon that uses a non-default font (`font:scoutkit-icons <char>`) with the
+   `font-<fontName>` class (IconDesc#cssClass) but ships no font-family rule for it — provide it here.
+   Wins over the core `.font-icon { font-family: scoutIcons }` because this theme is imported last. */
+.font-scoutkit-icons {
+  font-family: scoutkit-icons, @font-default-family;
+}
+
 body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -45,6 +64,23 @@ body {
 /* Give the bench (the chat surface area) a subtle inset divider from the navigation. */
 .desktop-bench {
   border-left: 1px solid @border-color;
+}
+
+/* Compact (mobile) navigation — vertically center the page/menu font-icons with their label.
+   Scout lays each breadcrumb node out as a flex row with `align-items: start`, and the outline
+   bumps the node icon to 16px while keeping the 15px font-icon line-height (sizes.less) — so the
+   glyph reads a touch high next to the 13px label (the "icons don't fit" report). Centering the
+   row's items and letting the icon box hug its glyph (line-height: 1, no vertical padding) makes
+   icon and label share a vertical center. Scoped to `.compact.outline.breadcrumb` so the DEFAULT
+   (desktop/tablet) navigation is untouched. */
+.compact.outline.breadcrumb > .tree-data > .tree-node {
+  align-items: center;
+
+  & > .icon {
+    padding-top: 0;
+    padding-bottom: 0;
+    line-height: 1;
+  }
 }
 
 /* Align the docked LiveKit call surface with the app accent (the package ships its own self-contained

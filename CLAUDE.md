@@ -119,6 +119,14 @@ Desktop (DEFAULT) — two outlines, switched via OutlineViewButtons
   them with `iconId: 'font:<customFont> <char>'`. Prefer extending the existing custom font over
   starting a new one; localize labels (not icons) per the i18n rules. Say which framework icons you
   checked before adding a custom glyph.
+- **Standard action-icon glyphs (project rule).** The three common row/menu actions always use the
+  same glyph so the UI stays consistent: **new / create → a plus-in-circle**, **edit → a pencil**,
+  **delete → a trash can**. Apply these to any "new"/"create", "edit"/"rename", or "delete"/"remove"
+  `Menu`/`Button`/`Action` (`iconId`). Note the Scout built-in font (`scoutIcons`) only covers
+  **edit** (`icons.PENCIL`); it has **no plus-in-circle and no trash-can**, so new/delete are served
+  from the app's **custom icon font** (`scoutkit-icons`, registered in `apps/web/src/main/Icons.ts`
+  as `Icons.PLUS_CIRCLE` / `Icons.TRASH`). Use those constants — do not substitute a different glyph
+  (e.g. `GROUP_PLUS`, `REMOVE`) for these actions.
 - **Scout JS is not React.** Build widgets with `scout.create(Type, {parent, ...})`; reference
   classes directly as `objectType` in models. Lifecycle: `_init` → `_render`/`_remove`.
 - **Model-injected properties** (set from the model in `_init`) use the definite-assignment
