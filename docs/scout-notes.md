@@ -562,5 +562,142 @@ calls it from `injectMenusInternal(...)`; gated by a config property it appends 
 "read-only" menu to every form. Pattern: a single app-scoped helper centralizes a cross-cutting UI
 contribution rather than repeating it per form. In Scout JS the analog is a small shared helper/util
 module that builds the `Menu` model, invoked where each form assembles its menus.
+
+---
+
+## 12. JS Widgets sample app (`scout.docs/code/widgets`) — Scout JS idioms
+
+Distilled from the official **widgets gallery** (`code/widgets` of `eclipse-scout/scout.docs`, branch
+`releases/26.1`, commit `c42c059`). The module has two flavors — `org.eclipse.scout.widgets.*` (Scout
+*Classic*/Java) and **`org.eclipse.scout.jswidgets.ui.html`** (**pure Scout JS / TypeScript**, ~288
+`.ts` files, one demo `Form` per widget). The JS one is **the single most relevant upstream reference
+for this repo** — it's the canonical, version-exact TypeScript implementation of every Scout JS widget
+and the idioms below are exactly the ones our `apps/web` + `packages/livekit` are written in. Verified
+against the installed `@eclipse-scout/core` source.
+
+### 12.1 Model / behavior split — `*FormModel.ts` + `models.get(...)` (the structural idiom)
+
+Every demo form is **two files**: a **model** (`StringFieldFormModel.ts` = a `default (): FormModel =>
+({...})` factory describing the declarative widget tree) and a **behavior** class
+(`StringFieldForm.ts extends Form`) whose `_jsonModel()` returns **`models.get(StringFieldFormModel)`**
+(`util/models.ts`). `models.get(fn)` invokes the factory and stamps an `id`; **`models.extend(ext,
+parent)`** merges/overrides a base model (for variants). Keeping the (large, static) model out of the
+behavior class keeps both readable.
+- **This repo already does this for the reusable widget** (`LiveKitMeeting.ts` + `LiveKitMeetingModel.ts`)
+  but the **app forms inline their `_jsonModel()`** (`ChatForm`, `NameForm`, `NewConversationForm`).
+  Both are valid; inline is fine while the models are small. **If a form's model grows, split it out and
+  switch to `models.get(...)` — that's the upstream convention.**
+
+### 12.2 Typed `widgetMap` — `this.widget('Id')` without passing the class
+
+Each model file ends with a generated **`XxxFormWidgetMap`** type (`{'StringField': StringField;
+'MaxLengthField': NumberField; …}`), and the form does **`declare widgetMap: StringFieldFormWidgetMap`**.
+Then **`this.widget('StringField')` is fully typed** (returns `StringField`) — no second class argument.
+The map is **generated/maintained by the Scout SDK** from the model (the `/* GENERATED WIDGET MAPS */`
+block); it can also be hand-written. Composite maps compose with `&` (a form map intersects its boxes'
+maps, e.g. `& ValueFieldPropertiesBoxWidgetMap`).
+- **This repo uses the older runtime-checked form** `this.widget('name', StringField)` (a cast +
+  assertion). That still works and is fine for our handful of fields. The `widgetMap` route is the
+  upstream-preferred, more type-safe option if we adopt the model-split — note it but don't churn
+  existing forms for it.
+
+### 12.3 Namespace & object-factory registration (`index.ts`)
+
+The entry registers the app namespace so string `objectType`s resolve:
+**`ObjectFactory.get().registerNamespace('jswidgets', self)`** (after `export *` of every class), plus
+**`scout.addObjectFactories({'Desktop': () => new Desktop()})`** for types needing a non-default
+constructor. This is what lets a model say `objectType: 'jswidgets.WatchField'` (string) and lets the
+**router** resolve a page by name.
+- **This repo references widget classes directly** as `objectType` (e.g. `objectType: ChatBox`) and
+  doesn't need a namespace registry — also fully valid (and simpler). Only register a namespace if we
+  start referencing our widgets by **string** name (e.g. for routing/deep-links).
+
+### 12.4 Reusable composite "box" widgets with a `setField(widget)` API (reuse-before-rebuild, JS form)
+
+The gallery's biggest lesson mirrors §11.1 but in Scout JS: recurring form sections are **their own
+reusable widgets**, each a `GroupBox`/`TabBox`/`TabItem` subclass **+ model file**, dropped into dozens
+of demo forms and bound to the demoed widget via a uniform **`.setField(widget)`**:
+`ValueFieldPropertiesBox`, `FormFieldPropertiesBox`, `GridDataBox` (edits `gridDataHints`!),
+`WidgetActionsBox`, `FormFieldActionsBox`, `StatesBox`, `EventsTab`, `ConfigurationBox`. A form just
+lists them in its model and calls `this.widget('GridDataBox').setField(stringField)`.
+- **Pattern of `setField`:** public `setField(f)` → `setProperty('field', f)` → protected `_setField(f)`
+  that (a) **removes the listener from the previous field**, (b) `_setProperty('field', f)`, (c) wires
+  the new field's two-way bindings. `EventsTab._setField` is the model for safe listener swap +
+  removing on `'destroy'`.
+- **Actionable here:** if we add config/detail sections that repeat across `ChatForm` /
+  `NewConversationForm` / future forms, build a small `GroupBox` subclass with a `setX()` API and reuse
+  it, instead of duplicating field models.
+
+### 12.5 Two-way binding idiom (config field ⇄ widget property)
+
+Pervasive throughout `StringFieldForm._init` and every `*PropertiesBox`:
+```ts
+cfgField.setValue(target.someProp);                                   // seed from the widget
+cfgField.on('propertyChange:value', e => target.setSomeProp(e.newValue)); // push edits back
+target.on('propertyChange:someProp', e => cfgField.setValue(e.newValue)); // reflect external changes
+```
+`propertyChange:<prop>` is the canonical Scout JS event for "a single property changed"; pair it with the
+widget's generated `setProp(...)` setter. We already use `this.widget(...).on('propertyChange:value', …)`
+in `apps/web` — this is the same idiom, just applied systematically.
+
+### 12.6 Custom widget from scratch — `WatchField` (`FormField` + `HtmlComponent` + custom `Layout`)
+
+The `custom/watch/` example is the concrete, installed version of our §1/§8.3 custom-widget pattern and
+the closest analog to `ChatBox` / `LiveKitMeeting`:
+- **`WatchField extends FormField`**, `_render()` builds the field in the canonical order:
+  `this.addContainer(this.$parent, 'watch-field')` → `this.addLabel()` → `this.addMandatoryIndicator()`
+  → `appendDiv('content')` + `this.addField($field)` → **`HtmlComponent.install(this.$field, session)`**
+  → `htmlField.setLayout(new WatchFieldLayout(this))` → `this.addStatus()`. (A `Widget` that is *not* a
+  field — like our `ChatBox` — skips the field/label/status scaffolding and just builds its container.)
+- **Custom `Layout`** (`WatchFieldLayout extends NullLayout`): override **`layout($container)`**, read
+  `$container.width()/height()`, size the child (`$canvas.cssWidth/cssHeight/...`), then call
+  `super.layout($container)`. **Use a `Layout` subclass when child sizes must be computed in JS**
+  (here: keep a square canvas centered). Our `ChatBox`/`LiveKitMeeting` instead size children with **CSS
+  flex** on a plain `NullLayout` (§2) — both are idiomatic; pick the JS `Layout` only when CSS can't
+  express the sizing.
+- `setInterval`/timer started in `_render` must be cleared in **`_remove()`** before `super._remove()`
+  (§1) — the demo omits cleanup, but our widgets must not.
+
+### 12.7 App / Desktop / Router / responsive
+
+`App extends ScoutApp` overrides **`_createDesktop(parent)`** → `scout.create(Desktop, {parent})`,
+registers a **`Router`** (`router/router.ts`) + a custom `Route` for hash-based deep-linking across
+pages (`router.register(new WidgetsRoute(desktop)); router.activate();`), and registers a
+**`DesktopResponsiveHandler`** with **`ResponsiveManager.get().registerHandler(...)`** for responsive
+desktop behavior. Extra bootstrap steps go through **`_defaultBootstrappers()`** (the gallery adds
+`access.bootstrapSystem()` + `config.bootstrapSystem()`).
+- This repo's `index.ts` uses `App.init({bootstrap:{textsUrl,localesUrl}})` (translations note in
+  CLAUDE.md) — same App lifecycle. A **`Router`** is the upstream way to make pages deep-linkable; worth
+  knowing if we ever want shareable URLs for a conversation.
+
+### 12.8 Handy model-property idioms seen across the gallery
+
+Concrete, copy-pasteable model settings (all verified in core): `displayHint: 'view'`; group box
+`expandable: true` (collapsible section) and `borderVisible: false`; `labelPosition:
+FormField.LabelPosition.ON_FIELD` (placeholder-style label; `=2`/`'onField'`); `Button.DisplayStyle.LINK`
+(link-style button); `PlaceholderField` (empty grid spacer for alignment); `gridUseUiWidth: true` and
+`gridDataHints: {fillHorizontal: false}` (size to content, §2); `TabBox` with a **header menu** via a
+`Menu` whose `menuTypes: [TabBox.MenuType.Header]` (see `ConfigurationBox` — a collapsible tab box whose
+header menu toggles `expanded` and flips `weightY` 0↔orig to collapse vertically, using
+`icons.ANGLE_DOWN/UP`); `selectedTab: 'PropertiesTab'`.
+
+### 12.9 Icons & small shared helpers
+
+- **`style/icons.ts`** is a plain `export const icons = { PAINT_BRUSH: 'font:lineAwesomeIcons \uf2a7',
+  … }` — **identical in shape to this repo's `apps/web/src/main/Icons.ts`** custom-font mapping (§7);
+  confirms our approach. Core also exports ready glyphs (`icons.ANGLE_DOWN/UP`, etc.) reused for
+  expand/collapse affordances — reach for those before adding a custom one (CLAUDE.md icon rule).
+- **`common/util.ts`** is a tiny `export const util = { showMenuActionMessage(menu) {…} }` — the Scout JS
+  analog of the Classic app-scoped helper (§11.9): a stateless shared module for cross-form behavior.
+
+### 12.10 Where to look for deeper dives
+
+The gallery has full, runnable demos for areas we may extend: **pages/outlines** (`page/` —
+`SamplePageWithTable` + `SamplePageWithTableSearchForm`, `DynamicPageWithNodes/Table`, custom-column
+factory/customizer), **tables** (`table/` — editable, hierarchical, column property boxes, background
+effects), **smartfields/lookups** (`smartfield/`, `lookup/` — table/tree/multiline smartfields, many
+`*LookupCall` examples extending `StaticLookupCall`), **tiles** (`tilegrid/`, `tileaccordion/`), and
+**forms** (`form/` — `LifecycleForm`, `FormPropertiesBox`). When implementing one of these here, read the
+matching `jswidgets` demo first for the idiomatic model + wiring.
 </content>
 </invoke>
