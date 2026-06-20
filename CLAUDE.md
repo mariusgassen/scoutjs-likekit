@@ -107,26 +107,24 @@ Desktop (DEFAULT) — two outlines, switched via OutlineViewButtons
   `SearchOutline` and bases every list page on `PageWithTable` rather than reinventing them — match
   that. Only write a feature from the ground up once you've confirmed nothing existing fits, and say
   briefly what you checked.
-- **Use a framework icon before adding your own.** Same reuse rule for icons. Scout ships a built-in
-  **font icon** set exposed as named constants on the `icons` module / `Icons` class in
-  `@eclipse-scout/core` (e.g. `Icons.SEARCH`, `Icons.PERSON`, `Icons.PENCIL`, `Icons.STAR`,
-  `Icons.REMOVE`). Set them on a widget via its `iconId` model property (string form `font:<char>` /
-  `font:<fontName> <char>` for raw glyphs) — most widgets (`Menu`/`Action`, `Button`, `TreeNode`/`Page`,
-  `Column`, `FormField`) accept `iconId`. **Check the `icons` constants (and the pinned *Icons* doc)
-  for a built-in glyph that fits before creating anything.** Only when nothing in the framework set
-  fits, add a **custom icon font**: build the font (e.g. IcoMoon) and `@font-face` it in the app's
-  LESS theme, register the new icon ids (subclass/extend `Icons` with the glyph chars), then reference
-  them with `iconId: 'font:<customFont> <char>'`. Prefer extending the existing custom font over
-  starting a new one; localize labels (not icons) per the i18n rules. Say which framework icons you
-  checked before adding a custom glyph.
+- **Icons: use the `Icons` catalog; framework glyph first.** Always set a widget's icon via its
+  `iconId` model property — most widgets (`Menu`/`Action`, `Button`, `TreeNode`/`Page`, `Column`,
+  `FormField`) accept it. Source every icon from the single **`apps/web/src/main/Icons.ts` catalog**,
+  which composes (a) the **complete FontAwesome Free solid set** (1300+ glyphs, self-hosted as the
+  `scoutkit-icons` font — see persistence note below) exposed as SCREAMING_SNAKE FontAwesome names
+  (`Icons.VIDEO`, `Icons.GEAR`, `Icons.CIRCLE_USER`, …), with (b) Scout core `icons` taking precedence
+  on name collisions. **Prefer the Scout/framework glyph where one fits** (e.g. `Icons.SEARCH`,
+  `Icons.PERSON_SOLID`, `Icons.PENCIL`) — it's the same `icons` set, just reached through `Icons` —
+  then fall back to any FontAwesome name. Because the whole FontAwesome solid set is already registered,
+  **you almost never need to touch the font** — just reference `Icons.<NAME>`. Only if a needed glyph is
+  truly absent, add it via the generator (`apps/web/scripts/generate-icons.py`), never a fresh CDN/font.
+  Localize labels (not icons) per the i18n rules.
 - **Standard action-icon glyphs (project rule).** The three common row/menu actions always use the
-  same glyph so the UI stays consistent: **new / create → a plus-in-circle**, **edit → a pencil**,
-  **delete → a trash can**. Apply these to any "new"/"create", "edit"/"rename", or "delete"/"remove"
-  `Menu`/`Button`/`Action` (`iconId`). Note the Scout built-in font (`scoutIcons`) only covers
-  **edit** (`icons.PENCIL`); it has **no plus-in-circle and no trash-can**, so new/delete are served
-  from the app's **custom icon font** (`scoutkit-icons`, registered in `apps/web/src/main/Icons.ts`
-  as `Icons.PLUS_CIRCLE` / `Icons.TRASH`). Use those constants — do not substitute a different glyph
-  (e.g. `GROUP_PLUS`, `REMOVE`) for these actions.
+  same glyph so the UI stays consistent: **new / create → a plus-in-circle** (`Icons.PLUS_CIRCLE`,
+  FontAwesome `circle-plus`), **edit → a pencil** (`icons.PENCIL`), **delete → a trash can**
+  (`Icons.TRASH`, FontAwesome `trash`). Apply these to any "new"/"create", "edit"/"rename", or
+  "delete"/"remove" `Menu`/`Button`/`Action` (`iconId`). Use those constants — do not substitute a
+  different glyph (e.g. `GROUP_PLUS`, `REMOVE`) for these actions.
 - **Scout JS is not React.** Build widgets with `scout.create(Type, {parent, ...})`; reference
   classes directly as `objectType` in models. Lifecycle: `_init` → `_render`/`_remove`.
 - **Model-injected properties** (set from the model in `_init`) use the definite-assignment
