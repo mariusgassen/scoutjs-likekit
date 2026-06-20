@@ -81,6 +81,39 @@ public class ConversationService {
   }
 
   /**
+   * Renames a conversation. A blank title is ignored (the existing title is kept). Returns the
+   * updated conversation, or {@link Optional#empty()} when no conversation has the given id.
+   */
+  public Optional<Conversation> rename(String id, String title) {
+    String clean = StringUtility.hasText(title) ? title.trim() : null;
+    if (clean != null) {
+      int updated = db()
+          .update(CONVERSATION)
+          .set(CONVERSATION.TITLE, clean)
+          .where(CONVERSATION.ID.eq(id))
+          .execute();
+      if (updated == 0) {
+        return Optional.empty();
+      }
+    }
+    return get(id);
+  }
+
+  /**
+   * Deletes a conversation together with its messages and member links. There is no
+   * {@code ON DELETE CASCADE} in the schema, so the children are removed first, all in one
+   * transaction. Returns {@code true} when a conversation was actually deleted.
+   */
+  public boolean delete(String id) {
+    return db().transactionResult(tx -> {
+      DSLContext t = tx.dsl();
+      t.deleteFrom(MESSAGE).where(MESSAGE.CONVERSATION_ID.eq(id)).execute();
+      t.deleteFrom(CONVERSATION_MEMBER).where(CONVERSATION_MEMBER.CONVERSATION_ID.eq(id)).execute();
+      return t.deleteFrom(CONVERSATION).where(CONVERSATION.ID.eq(id)).execute() > 0;
+    });
+  }
+
+  /**
    * Global search over conversations: a conversation matches when its title or any member contact's
    * name/email contains every (whitespace-separated) token of the query (case-insensitive). Backs
    * {@code GET /api/search/conversations}.

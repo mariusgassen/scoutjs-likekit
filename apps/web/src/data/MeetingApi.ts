@@ -67,6 +67,16 @@ export class MeetingApi {
     return this._send('POST', '/conversations', req);
   }
 
+  /** Renames a conversation (group/meeting room or DM) and returns the updated conversation. */
+  renameConversation(id: string, title: string): Promise<Conversation> {
+    return this._send('PUT', `/conversations/${encodeURIComponent(id)}`, {title});
+  }
+
+  /** Permanently deletes a conversation together with its messages and member links. */
+  deleteConversation(id: string): Promise<void> {
+    return this._send('DELETE', `/conversations/${encodeURIComponent(id)}`);
+  }
+
   /** Returns the existing direct conversation with the given contact, or creates one on the fly. */
   ensureDirectConversation(contact: Contact): Promise<Conversation> {
     return this.conversations().then(list => {
@@ -109,17 +119,21 @@ export class MeetingApi {
     return res.json() as Promise<T>;
   }
 
-  protected async _send<T>(method: string, path: string, body: unknown): Promise<T> {
+  protected async _send<T>(method: string, path: string, body?: unknown): Promise<T> {
     const res = await fetch(this.base + path, {
       method,
       headers: {
         'Content-Type': 'application/json',
         'X-Requested-With': 'XMLHttpRequest'
       },
-      body: JSON.stringify(body)
+      body: body === undefined ? undefined : JSON.stringify(body)
     });
     if (!res.ok) {
       throw new Error(`${method} ${path} failed (HTTP ${res.status})`);
+    }
+    // DELETE (and other mutations) may answer 204 No Content; don't try to parse an empty body.
+    if (res.status === 204 || res.headers.get('Content-Length') === '0') {
+      return undefined as T;
     }
     return res.json() as Promise<T>;
   }

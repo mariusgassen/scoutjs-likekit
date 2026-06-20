@@ -3,9 +3,12 @@ package org.scoutkit.meeting.conversation;
 import java.util.List;
 
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -18,14 +21,17 @@ import org.scoutkit.meeting.model.Conversation;
 import org.scoutkit.meeting.model.Message;
 import org.scoutkit.meeting.model.NewConversation;
 import org.scoutkit.meeting.model.NewMessage;
+import org.scoutkit.meeting.model.RenameConversation;
 
 /**
  * REST API for conversations and their persistent messages:
  * <ul>
- *   <li>{@code GET  /api/conversations}</li>
- *   <li>{@code POST /api/conversations}</li>
- *   <li>{@code GET  /api/conversations/{id}/messages?after=<ts>}</li>
- *   <li>{@code POST /api/conversations/{id}/messages}</li>
+ *   <li>{@code GET    /api/conversations}</li>
+ *   <li>{@code POST   /api/conversations}</li>
+ *   <li>{@code PUT    /api/conversations/{id}}</li>
+ *   <li>{@code DELETE /api/conversations/{id}}</li>
+ *   <li>{@code GET    /api/conversations/{id}/messages?after=<ts>}</li>
+ *   <li>{@code POST   /api/conversations/{id}/messages}</li>
  * </ul>
  */
 @Path("conversations")
@@ -42,6 +48,23 @@ public class ConversationResource implements IRestResource {
   @Produces(MediaType.APPLICATION_JSON)
   public Conversation create(NewConversation req) {
     return BEANS.get(ConversationService.class).create(req);
+  }
+
+  @PUT
+  @Path("/{id}")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  public Conversation rename(@PathParam("id") String id, RenameConversation req) {
+    return BEANS.get(ConversationService.class).rename(id, req != null ? req.title() : null)
+        .orElseThrow(() -> new NotFoundException("Conversation not found: " + id));
+  }
+
+  @DELETE
+  @Path("/{id}")
+  public void delete(@PathParam("id") String id) {
+    if (!BEANS.get(ConversationService.class).delete(id)) {
+      throw new NotFoundException("Conversation not found: " + id);
+    }
   }
 
   @GET

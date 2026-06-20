@@ -14,6 +14,8 @@
     "scoutkit.NoMessagesYet": "No messages yet",
     "scoutkit.Direct": "Direct",
     "scoutkit.Meeting": "Meeting",
+    "scoutkit.RenameConversation": "Rename conversation",
+    "scoutkit.DeleteConversationConfirm": "Delete \"{0}\"? This permanently removes the conversation and all its messages.",
 
     "scoutkit.Email": "Email",
     "scoutkit.Invite": "Invite",
@@ -83,6 +85,8 @@
     "scoutkit.NoMessagesYet": "Noch keine Nachrichten",
     "scoutkit.Direct": "Direkt",
     "scoutkit.Meeting": "Besprechung",
+    "scoutkit.RenameConversation": "Unterhaltung umbenennen",
+    "scoutkit.DeleteConversationConfirm": "\"{0}\" löschen? Dadurch werden die Unterhaltung und alle ihre Nachrichten dauerhaft entfernt.",
 
     "scoutkit.Email": "E-Mail",
     "scoutkit.Invite": "Einladen",
