@@ -1,13 +1,17 @@
-import {Column, Device, Menu, NumberColumn, Page, PageWithTable, scout, Table, TableRow} from '@eclipse-scout/core';
+import {Column, Device, Menu, MessageBox, MessageBoxes, NumberColumn, Page, PageWithTable, scout, Status, Table, TableRow} from '@eclipse-scout/core';
 import {ConversationPage} from './ConversationPage';
 import {NewConversationForm} from './NewConversationForm';
+import {RenameConversationForm} from './RenameConversationForm';
 import {Icons} from './Icons';
 import {Conversation, meetingApi, MeetingApi} from '../data/MeetingApi';
 
 /**
  * Top-level outline page listing all conversations (DMs and group/meeting rooms) in a table.
- * Selecting a row drills down to the {@link ConversationPage} for that conversation; an empty-space
- * "New" menu opens the {@link NewConversationForm} to create a group/meeting room.
+ * Selecting a row drills down to the {@link ConversationPage} for that conversation. The standard
+ * row actions follow the Scout contacts-sample convention (see `docs/scout-notes.md` §11): a "New"
+ * menu (plus-in-circle) opens the {@link NewConversationForm}, a "Rename" menu (pencil) opens the
+ * {@link RenameConversationForm}, and a "Remove" menu (trash) deletes after a confirmation; each
+ * mutation reloads the page and re-selects the affected row.
  */
 export class ConversationTablePage extends PageWithTable {
 
@@ -44,8 +48,30 @@ export class ConversationTablePage extends PageWithTable {
           // still the menu's accessible name / tap tooltip). Tablet/desktop keep the label. Mirrors
           // the same `Device.Type.MOBILE` gate that drives the compact desktop in Desktop.ts.
           textVisible: Device.get().type !== Device.Type.MOBILE,
-          menuTypes: [Table.MenuType.EmptySpace],
+          // Available with or without a selection (contacts-sample convention): create is reachable
+          // whether the user has a row selected or is clicking on empty space.
+          menuTypes: [Table.MenuType.EmptySpace, Table.MenuType.SingleSelection],
           keyStroke: 'insert'
+        },
+        {
+          // Edit action — standard pencil glyph (built into the Scout core font), single-selection.
+          id: 'RenameMenu',
+          objectType: Menu,
+          text: '${textKey:Rename}',
+          iconId: Icons.PENCIL,
+          textVisible: Device.get().type !== Device.Type.MOBILE,
+          menuTypes: [Table.MenuType.SingleSelection],
+          keyStroke: 'f2'
+        },
+        {
+          // Delete action — custom trash-can glyph (`scoutkit-icons`), single-selection, confirmed.
+          id: 'DeleteMenu',
+          objectType: Menu,
+          text: '${textKey:Remove}',
+          iconId: Icons.TRASH,
+          textVisible: Device.get().type !== Device.Type.MOBILE,
+          menuTypes: [Table.MenuType.SingleSelection],
+          keyStroke: 'delete'
         }
       ]
     });
@@ -54,6 +80,8 @@ export class ConversationTablePage extends PageWithTable {
   protected override _initDetailTable(table: Table): void {
     super._initDetailTable(table);
     table.widget('NewMenu', Menu).on('action', () => this._onNewMeeting());
+    table.widget('RenameMenu', Menu).on('action', () => this._onRename());
+    table.widget('DeleteMenu', Menu).on('action', () => this._onDelete());
   }
 
   protected override _loadTableData(searchFilter: any): JQuery.Promise<any> {
@@ -91,17 +119,72 @@ export class ConversationTablePage extends PageWithTable {
     const form = scout.create(NewConversationForm, {parent: this.outline});
     form.open();
     form.whenSave().then(() => {
-      const created = form.createdConversation;
-      if (!created) {
-        return;
+      if (form.createdConversation) {
+        this._reloadSelecting(form.createdConversation.id);
       }
+    });
+  }
+
+  protected _onRename(): void {
+    const conversation = this._selectedConversation();
+    if (!conversation) {
+      return;
+    }
+    const form = scout.create(RenameConversationForm, {parent: this.outline, conversation});
+    form.open();
+    form.whenSave().then(() => {
+      if (form.updatedConversation) {
+        this._reloadSelecting(form.updatedConversation.id);
+      }
+    });
+  }
+
+  protected _onDelete(): void {
+    const conversation = this._selectedConversation();
+    if (!conversation) {
+      return;
+    }
+    MessageBoxes.createYesNo(this.outline)
+      .withSeverity(Status.Severity.WARNING)
+      .withHeader(this.session.text('Remove'))
+      .withBody(this.session.text('scoutkit.DeleteConversationConfirm', conversation.title || conversation.id))
+      .buildAndOpen()
+      .then(option => {
+        if (option !== MessageBox.Buttons.YES) {
+          return;
+        }
+        this.api.deleteConversation(conversation.id)
+          .then(() => this._reloadSelecting(undefined), err => this._showError(err));
+      });
+  }
+
+  /** The {@link Conversation} behind the single selected row, or `undefined` if none is selected. */
+  protected _selectedConversation(): Conversation | undefined {
+    const row = this.detailTable.selectedRow();
+    if (!row) {
+      return undefined;
+    }
+    return this._convById.get(this.detailTable.columnById('id').cellValue(row) as string);
+  }
+
+  /**
+   * Reloads the table and, once the new rows arrive, re-selects the row with the given id (shared by
+   * the create/rename actions so the just-touched conversation stays selected). Pass `undefined` to
+   * just reload (e.g. after a delete, where the row is gone).
+   */
+  protected _reloadSelecting(id: string | undefined): void {
+    if (id) {
       this.detailTable.one('rowsInserted', () => {
-        const row = this.detailTable.rows.find(r => this.detailTable.columnById('id').cellValue(r) === created.id);
+        const row = this.detailTable.rows.find(r => this.detailTable.columnById('id').cellValue(r) === id);
         if (row) {
           this.detailTable.selectRow(row);
         }
       });
-      this.reloadPage();
-    });
+    }
+    this.reloadPage();
+  }
+
+  protected _showError(err: Error): void {
+    MessageBoxes.openOk(this.outline, this.session.text('scoutkit.ErrorX', err.message), Status.Severity.ERROR);
   }
 }
