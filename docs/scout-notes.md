@@ -405,5 +405,162 @@ npm run build:web                 # full webpack prod build + static site
 ```
 
 > The Node engine warning (`engines.node`) is expected and harmless — see CLAUDE.md.
+
+---
+
+## 11. Contacts sample app (`scout.docs/code/contacts`) — patterns & best practices
+
+Distilled from Eclipse Scout's official **Contacts** sample application (the `code/contacts` module of
+`eclipse-scout/scout.docs`, branch `releases/26.1`, commit `c42c059`). ⚠️ **It is a Scout *Classic*
+app** (the UI is **Java** — `org.eclipse.scout.contacts.client` — rendered by `ui.html` via
+`RemoteApp`; state lives on the UI server). This repo is **pure Scout JS**, so the *Java field/page
+classes don't transfer 1:1* — but the **design patterns** do, and almost every one has a Scout JS
+counterpart in the installed core (verified below). Treat this as the upstream worked example of the
+**"reuse before you rebuild"** rule in CLAUDE.md. Each lesson is mapped Classic → **Scout JS** and to
+this repo.
+
+### 11.1 Factor common menus/fields into reusable `Abstract*` templates (the headline lesson)
+
+The sample's `client/common/` package is a library of reusable bases that pages/forms subclass:
+`AbstractEditMenu` (Pencil icon + `alt-e` keystroke + `Edit` text), `AbstractNewMenu` (plus glyph +
+`alt-n` + `menuTypes {EmptySpace, SingleSelection}`), `AbstractAddressBox` (street/city/country group
++ "show on map"), `AbstractEmailField` (regex-validated), `AbstractNotesBox`, `AbstractUrlImageField`,
+`AbstractDirtyFormHandler`. `OrganizationTablePage` then declares `class EditMenu extends
+AbstractEditMenu {…}` — only the `execAction` body. **The cost of *not* doing this is visible in the
+same codebase:** `PersonTablePage` copy-pasted its own `EditMenu`/`NewMenu` inline instead of reusing
+the bases, and `PersonForm` carries a comment *"in a real world scenario avoid copy&paste: delete the
+pictureUrlField and let PictureField extend AbstractUrlImageField"*. **Lesson for this repo:** when the
+same menu/field/box shows up on two pages (e.g. our `New`/`Edit`/`Delete` row menus across
+`ConversationTablePage` / `ContactTablePage`), hoist a shared base in `apps/web/src` and subclass it,
+rather than duplicating the model. Scout JS supports this exactly the same way — subclass a `Menu` /
+`*Field` / `GroupBox` and reference the subclass as `objectType`.
+
+### 11.2 Table-page conventions (mapped to our `PageWithTable`s)
+
+- **Hidden primary-key column** — `PersonIdColumn` is `displayable:false` + `primaryKey:true`; carries
+  the row id for `execCreateChildPage`. JS equivalent = our hidden id column read in `_createChildPage`
+  (§4, already applied).
+- **Summary column** — `SummaryColumn` (`summary:true`, `displayable:false`) composes the node label
+  via `execDecorateCell` (`"First Last (City)"`). Drives the **breadcrumb/compact** node text — exactly
+  why §4 says mark a `summary` column; relevant to our mobile/compact mode (§9).
+- **Default (row-activation) menu** — Classic `getConfiguredDefaultMenu() → EditMenu`: double-click /
+  Enter on a row runs Edit. **Scout JS** has no "default menu class"; it uses **`Table.defaultMenuTypes`**
+  (default `[Table.MenuType.EmptySpace]`) — the menu invoked on row activation is the single-selection
+  menu matching those types. If we want double-click-to-edit, give the Edit menu `SingleSelection` and
+  rely on `defaultMenuTypes`, or handle `rowAction`.
+- **`New` menu on *both* `EmptySpace` and `SingleSelection`** — so "create" is reachable whether or not
+  a row is selected (`AbstractNewMenu`). Our `Table.MenuType` enum is the same; worth copying for the
+  conversations/contacts `New` action.
+- **Lookup/code-backed columns** — `CountryColumn`/`OrganizationColumn` are `AbstractSmartColumn<String>`
+  with `getConfiguredLookupCall()`. **Scout JS** = **`SmartColumn`** (`table/columns/SmartColumn.ts`),
+  which accepts `lookupCall` **or** `codeType` and resolves the display text from the key.
+- **Columns hidden-but-available** — Phone/Mobile/Email are `visible:false` (user can show them); keeps
+  the default view lean (progressive disclosure). Set per `Column.visible`.
+- **Refresh after edit** — a `FormListener` reloads the page when the detail form closes *and was
+  stored*: `if (TYPE_CLOSED && form.isFormStored()) reloadPage();`. The canonical "re-query the list
+  after a create/save" wiring. JS: listen to the form's `'close'`/`store` and call the page's reload.
+
+### 11.3 Search — two upstream variants, both already understood here
+
+- **`AbstractSearchOutline`** — the sample's `common/SearchOutline` overrides `execSearch(query)` (a
+  global search box in the navigation). **This is exactly what our repo extends** in Scout JS
+  (`SearchOutline`, §5) — confirms our choice matches upstream's "search outline" pattern.
+- **Per-page `AbstractSearchForm`** — `PersonTablePage.getConfiguredSearchForm() → PersonSearchForm`
+  (fields + `AbstractSearchButton`/`AbstractResetButton`); the table page auto-runs `execLoadData(filter)`
+  on search. This is the structured per-page filter (the §8.2 `SearchFormTableControl` family). Use it
+  only if a list needs its own multi-field filter; our shared live-query outline covers the rest.
+
+### 11.4 Detail-form patterns (`PersonForm`, `OrganizationForm`)
+
+- **View display hint** — `getConfiguredDisplayHint() = DISPLAY_HINT_VIEW` so the form fills the bench
+  (not a dialog). Matches `Page._initDetailForm()` forcing `displayHint:'view'` (§5).
+- **Exclusive open (no duplicate forms)** — Classic `computeExclusiveKey()` + `startInternalExclusive()`
+  + `getConfiguredOpenExclusive()`: opening the same person twice focuses the existing form. **Scout JS
+  has this too** — `Form.exclusiveKey` (a `() => key` property; `form/Form.ts:33`). Set
+  `form.setExclusiveKey(() => entityId)` to dedupe detail forms. (Not currently used here; useful if we
+  let users open the same conversation/contact form from multiple places.)
+- **Tabbed forms** — `DetailsBox extends AbstractTabBox` groups Contact-info / Work / Notes tabs.
+  **Scout JS** = **`TabBox`** (`form/fields/tabbox/TabBox.ts`).
+- **Sequence box for horizontal field rows** — `LocationBox extends AbstractSequenceBox` lays City +
+  Country side-by-side; `autoCheckFromTo:false` disables the built-in from≤to range check when it isn't
+  a range. **Scout JS** = **`SequenceBox`**. Inside it, `labelPosition: LABEL_POSITION_ON_FIELD` puts
+  the label inside the field (placeholder-style) to save width.
+- **Radio group bound to a code type** — `GenderGroup extends AbstractRadioButtonGroup<String>` with
+  `getConfiguredCodeType() → GenderCodeType`. **Scout JS** = **`RadioButtonGroup`** + **`CodeType`/`Code`**
+  (`code/`); a `CodeType` is the Scout idiom for a small static enumeration (vs a `LookupCall` for larger
+  sets). Bind via the field's `codeType`.
+- **Layered validation** (three distinct hooks — all throw `VetoException` to block save):
+  - **Form-level** `execValidate()` — cross-field rule ("first **or** last name required", focuses the
+    empty field). JS: override `Form._validate()` / validate in `_save()`.
+  - **Field-level** `execValidateValue(raw)` — single-value rule (email regex; date-of-birth not in the
+    future). JS: `ValueField.setValidator(...)` or override `_validateValue`.
+  - **Dynamic mandatory** in `execChangedValue()` — `validateAddressFields()` makes City mandatory once
+    Street has text, Country mandatory once Street/City do. JS: react to the field's `valueChanged` and
+    call `setMandatory(...)`.
+- **Master/slave fields** — `PictureField`/`ShowOnMapButton` declare `getConfiguredMasterField()` +
+  `execChangedMasterValue()` so a field reacts to another's value. ⚠️ **Classic-only** — Scout JS
+  `FormField` has **no `masterField`**; wire dependent fields manually by listening to the master's
+  `propertyChange:value` and updating the slave.
+- **`gridWeightY: 0`** on the top "General" box so it doesn't grow vertically — the same `GridData`
+  steering documented in §2 (`weightY`).
+- **Form handlers** — `ModifyHandler.execLoad` does `export→service.load→import`; `execStore` does
+  `export→service.store`; `NewHandler.execStore` calls `service.create`. The repo's REST equivalent is
+  the form's `_load`/`_save` calling `MeetingApi` (§3) — same shape, native promises instead of beans.
+- **`AbstractDirtyFormHandler`** — a reusable handler that adds per-field dirty tracking (listens on
+  `PROP_DISPLAY_TEXT`), flips the form icon to a pencil when dirty, and recomputes the subtitle. A
+  template worth mirroring if we want a "modified" indicator on detail forms.
+
+### 11.5 Lookup calls
+
+`CountryLookupCall extends LocalLookupCall<String>` overrides `execCreateLookupRows()` returning
+`LookupRow(key, text)` (countries from `Locale.getISOCountries()`); `AvailableLocaleLookupCall` sorts by
+display name. **Scout JS** = **`StaticLookupCall<TKey>`** (`lookup/StaticLookupCall.ts`): extend it and
+implement **`_data()`** (rows as `[key, text, parentKey?]` tuples) and optionally `_dataToLookupRow()`.
+For code-type-backed pickers use **`CodeLookupCall`** (`code/CodeLookupCall.ts`, `extends
+StaticLookupCall`, takes a `codeType`). These feed `SmartField`/`SmartColumn`. We have no lookups yet;
+this is the path if we add e.g. a status/role picker.
+
+### 11.6 Desktop, outlines & header menus
+
+- `getConfiguredOutlines()` lists the outlines; `execDefaultView()` sets the start outline;
+  **`AbstractOutlineViewButton`** with `DisplayStyle.MENU` vs `.TAB` switches them. Mirrors our two
+  outlines + `OutlineViewButton`s built in `Desktop._init` (§5).
+- **Header menus that open a form in a popup** — `OptionsMenu`/`UserMenu extends AbstractFormMenu<T>`
+  (`getConfiguredForm()`). **Scout JS** = **`FormMenu`** (`form/FormMenu.ts`) — a menu whose `form`
+  renders in a popup. Use it for a settings/profile popup off the header instead of a separate dialog.
+- **Global keystrokes** on menus/buttons (`F3` search, `F9`/`F10`/`F11`, `alt-e`/`alt-n`) — Scout JS
+  widgets take a `keyStroke` model property; cheap accessibility/usability win for our row + header
+  actions.
+- `getConfiguredLogoId()` (header logo) and `getConfiguredOverviewIconId()` (page overview-tile icon)
+  are extra icon slots beyond `iconId`.
+
+### 11.7 Icons — confirms our `Icons.ts` convention
+
+The app's `Icons extends AbstractIcons` adds app glyphs and **mixes core constants with custom-font
+glyphs**: `Contacts = AbstractIcons.Folder`, `User = "user"`, but `Organization =
+"font:awesomeIcons \uf015"`, `MaleLine = "font:lineAwesomeIcons \uf27b"` (FontAwesome / Line-Awesome
+fonts registered by the app). The `New` menu likewise uses `"font:awesomeIcons \uf0d0"`. **This is precisely this repo's
+pattern** (`apps/web/src/main/Icons.ts` re-exports core `icons` + custom `scoutkit-icons` glyphs via
+`font:scoutkit-icons …`, §7) — upstream confirms: extend the core icon class, reuse core constants
+first, and reach for a custom font only for glyphs the core set lacks.
+
+### 11.8 Theming — upstream uses the multi-theme route (our §6 "Option 2")
+
+The sample ships **two** themes: `contacts-theme.less` (default/light) and `contacts-theme-dark.less`,
+each `@import "~@eclipse-scout/core/src/index"` then app overrides (`index.less` → `index-dark.less`
+adds `style/colors-dark`). The app's own LESS is **deliberately tiny**: a couple of color-variable
+overrides (`style/colors.less` = two `@read-only-menu-*` vars) + one component rule (`.read-only-info`).
+That's the **Option 2** (register named themes) alternative to this repo's **Option 1** (single theme
+via variable overrides, §6) — both are legitimate; we chose Option 1 because we ship one theme and the
+static-site generator would otherwise link every named theme. **Reinforced lesson:** keep app LESS
+small and additive (variable overrides + minimal component polish), exactly as §6 prescribes.
+
+### 11.9 App-scoped helper injecting a shared menu (read-only mode)
+
+`ContactsHelper` (`@ApplicationScoped`) exposes `injectReadOnlyMenu(menus)`, and `PersonForm.MainBox`
+calls it from `injectMenusInternal(...)`; gated by a config property it appends a right-aligned
+"read-only" menu to every form. Pattern: a single app-scoped helper centralizes a cross-cutting UI
+contribution rather than repeating it per form. In Scout JS the analog is a small shared helper/util
+module that builds the `Menu` model, invoked where each form assembles its menus.
 </content>
 </invoke>
