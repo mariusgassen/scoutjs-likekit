@@ -7,16 +7,17 @@
  * are kept minimal and at modest specificity so they survive Scout upgrades.
  */
 
-/* Custom icon font for the standard action glyphs the Scout core font lacks (plus-in-circle, trash
-   can — see the action-icon rule in CLAUDE.md). The .woff is a committed asset under res/fonts
-   (built by scripts/build-icon-font.py); the static-site generator serves it from prod/fonts next to
-   Scout's own fonts, so the relative url() matches the theme CSS location at runtime. Referenced via
-   the `Icons` constants (`font:scoutkit-icons <char>`) in src/main/Icons.ts. */
+/* Self-hosted icon font registering the complete FontAwesome Free solid set (the Scout core font
+   ships only a small subset). The .woff2 is FontAwesome's prebuilt `fa-solid-900`, vendored as a
+   committed asset under res/fonts by scripts/generate-icons.py; the static-site generator serves it
+   from prod/fonts next to Scout's own fonts, so the relative url() matches the theme CSS location at
+   runtime (no CDN). Referenced via the `Icons` catalog (`font:scoutkit-icons <char>`) in
+   src/main/Icons.ts. FontAwesome Free: icons CC BY 4.0, fonts SIL OFL 1.1. */
 @font-face {
   font-family: scoutkit-icons;
   font-weight: normal;
   font-style: normal;
-  src: url('fonts/scoutkit-icons.woff') format('woff');
+  src: url('fonts/scoutkit-icons.woff2') format('woff2');
 }
 
 /* Scout tags an icon that uses a non-default font (`font:scoutkit-icons <char>`) with the

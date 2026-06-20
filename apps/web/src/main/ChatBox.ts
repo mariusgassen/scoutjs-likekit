@@ -2,19 +2,19 @@ import {HtmlComponent, InitModelOf, scout, Widget, WidgetModel} from '@eclipse-s
 import {LiveKitMeeting} from '@scoutkit/livekit';
 import {Conversation, meetingApi, MeetingApi, Message} from '../data/MeetingApi';
 import {userIdentity} from '../data/UserIdentity';
+import {IconChars} from './Icons';
 
 const POLL_MS = 2500;
 
 /**
- * Inline SVG glyphs for the chat action buttons (call, send). The Scout font-icon set
- * (`icons.*`) has no phone/paper-plane glyph and this is a plain-HTML surface (not a Scout widget),
- * so small stroke icons are inlined here rather than adding a custom icon font. They inherit the
- * button's `currentColor` and scale with the font size via the `.cb-btn-icon` class.
+ * Render a custom `scoutkit-icons` glyph as inline HTML for the chat action buttons (call, send).
+ * This is a plain-HTML surface (not a Scout widget), so Scout's `iconId` machinery isn't available;
+ * the `font-scoutkit-icons` class resolves the font-family (theme/scoutkit.less) and the glyph then
+ * inherits the button's `currentColor` and scales with the font size via the `.cb-btn-icon` class.
  */
-const CB_ICONS = {
-  phone: '<svg class="cb-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>',
-  send: '<svg class="cb-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>'
-} as const;
+function cbIcon(glyph: string): string {
+  return `<span class="cb-btn-icon font-scoutkit-icons" aria-hidden="true">${glyph}</span>`;
+}
 
 export interface ChatBoxModel extends WidgetModel {
   /** The conversation this chat box is bound to. Required. */
@@ -80,7 +80,7 @@ export class ChatBox extends Widget {
         }
       });
     $composer.appendElement('<button>', 'cb-btn cb-send-btn')
-      .html(CB_ICONS.send + `<span class="cb-btn-label">${this.session.text('scoutkit.Send')}</span>`)
+      .html(cbIcon(IconChars.PAPER_PLANE) + `<span class="cb-btn-label">${this.session.text('scoutkit.Send')}</span>`)
       .on('click', () => this._onSend());
 
     this._loadMessages();
@@ -212,8 +212,9 @@ export class ChatBox extends Widget {
   /** Render the call button's icon + label for the current call state (start vs. active/end). */
   protected _renderCallButton(active: boolean): void {
     const label = this.session.text(active ? 'scoutkit.EndCall' : 'scoutkit.StartCall');
+    const glyph = active ? IconChars.PHONE_SLASH : IconChars.PHONE;
     this.$callBtn
-      .html(CB_ICONS.phone + `<span class="cb-btn-label">${label}</span>`)
+      .html(cbIcon(glyph) + `<span class="cb-btn-label">${label}</span>`)
       .toggleClass('cb-call-active', active);
   }
 

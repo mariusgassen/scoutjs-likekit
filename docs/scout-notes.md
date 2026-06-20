@@ -232,27 +232,31 @@ property:
   Reviewed against the full `scoutIcons` set (95 glyphs) — these are the best-fitting built-ins (the
   core font has no chat-bubble / envelope glyph), so they were kept.
 
-**Standard action-icon glyphs (project rule — see CLAUDE.md):** new/create → **plus-in-circle**,
-edit → **pencil** (`icons.PENCIL`), delete → **trash can**. The Scout core font has **no
-plus-in-circle and no trash-can** (verified by dumping the `scoutIcons` cmap), so those two are served
-from a small **custom icon font**:
-- `apps/web/res/fonts/scoutkit-icons.woff` — committed binary, built by
-  `apps/web/scripts/build-icon-font.py` (fontTools) from FontAwesome-Free *solid* outlines, glyphs at
-  `U+E900` (plus-circle) / `U+E901` (trash).
-- `@font-face` (family `scoutkit-icons`) + the `.font-scoutkit-icons { font-family }` mapping live in
-  `theme/scoutkit.less`. Scout tags a non-default-font icon element with the `font-<fontName>` class
-  (`IconDesc#cssClass`) but ships no family rule for it, so the theme supplies one (it wins because it
-  is imported last).
-- ids are exposed as `Icons.PLUS_CIRCLE` / `Icons.TRASH` in `apps/web/src/main/Icons.ts` (which
-  re-exports the core `icons` plus these). The `New` menu (`ConversationTablePage`) and the `Create`
-  button (`NewConversationForm`) use `Icons.PLUS_CIRCLE`.
+**Custom icon font — the full FontAwesome Free solid catalog.** The Scout core font (`scoutIcons`)
+ships only ~95 glyphs, so the app self-hosts the **complete FontAwesome Free solid set** (1395 glyphs)
+under the `scoutkit-icons` family — every FontAwesome solid icon is registered once, so adding a new
+icon never means editing the font again:
+- `apps/web/res/fonts/scoutkit-icons.woff2` — FontAwesome's prebuilt `fa-solid-900.woff2`, vendored as
+  a committed asset by `apps/web/scripts/generate-icons.py`. The same script generates the typed
+  catalog `apps/web/src/main/fa-icons.ts` (`faIcons.<NAME>` → `font:scoutkit-icons <char>`, FontAwesome
+  codepoints) from `metadata/icons.json`. FontAwesome Free: icons CC BY 4.0, fonts SIL OFL 1.1.
+- `@font-face` (family `scoutkit-icons`, `format('woff2')`) + the `.font-scoutkit-icons { font-family }`
+  mapping live in `theme/scoutkit.less`. Scout tags a non-default-font icon element with the
+  `font-<fontName>` class (`IconDesc#cssClass`) but ships no family rule for it, so the theme supplies
+  one (it wins because it is imported last).
+- `apps/web/src/main/Icons.ts` composes the catalog: `{...faIcons, ...icons}` (Scout core wins on name
+  collisions — the "framework icon first" rule) plus the action-icon aliases. Per the project rule
+  (CLAUDE.md): new/create → `Icons.PLUS_CIRCLE` (FontAwesome `circle-plus`), edit → `icons.PENCIL`,
+  delete → `Icons.TRASH` (FontAwesome `trash`). Use `Icons.<NAME>` (SCREAMING_SNAKE FontAwesome names,
+  e.g. `Icons.VIDEO`, `Icons.GEAR`) for anything else.
 - the static-site generator (`scripts/generate-site.mjs`) copies `res/fonts/*` into `prod/fonts/`
-  next to Scout's own fonts so the theme CSS's relative `url(fonts/…)` resolves at runtime.
+  next to Scout's own fonts so the theme CSS's relative `url(fonts/…)` resolves at runtime (no CDN).
 
-The Scout font set has **no phone/paper-plane glyph**, and `ChatBox` is a plain-HTML surface (not a
-Scout widget), so its call/send buttons use small **inline stroke SVGs** (`CB_ICONS` in `ChatBox.ts`,
-styled via `.cb-btn-icon`) and the header avatar uses the Scout icon font directly
-(`font-family: scoutIcons`, `content: '\E034'`/`'\E006'`).
+`ChatBox` is a plain-HTML surface (not a Scout widget), so its call/send buttons render the custom-font
+glyphs by hand: `IconChars.{PHONE,PHONE_SLASH,PAPER_PLANE}` (raw chars from `Icons.ts`) wrapped in a
+`<span class="cb-btn-icon font-scoutkit-icons">` (the `cbIcon()` helper in `ChatBox.ts`), styled via
+`.cb-btn-icon` (font-size, inherits `currentColor`). The active call swaps `phone` → `phone-slash`. The
+header avatar uses the Scout icon font directly (`font-family: scoutIcons`, `content: '\E034'`/`'\E006'`).
 
 **Compact-mode (mobile) navigation tweaks** (`theme/scoutkit.less`, scoped to
 `.compact.outline.breadcrumb`): Scout lays each breadcrumb node out as a flex row with
