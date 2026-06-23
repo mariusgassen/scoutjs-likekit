@@ -212,7 +212,7 @@ export class ChatBox extends Widget {
   /** Render the call button's icon + label for the current call state (start vs. active/end). */
   protected _renderCallButton(active: boolean): void {
     const label = this.session.text(active ? 'scoutkit.EndCall' : 'scoutkit.StartCall');
-    const glyph = active ? IconChars.PHONE_SLASH : IconChars.PHONE;
+    const glyph = active ? IconChars.VIDEO_SLASH : IconChars.VIDEO;
     this.$callBtn
       .html(cbIcon(glyph) + `<span class="cb-btn-label">${label}</span>`)
       .toggleClass('cb-call-active', active);

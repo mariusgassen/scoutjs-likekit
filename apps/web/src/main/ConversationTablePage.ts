@@ -9,7 +9,7 @@ import {Conversation, meetingApi, MeetingApi} from '../data/MeetingApi';
  * Top-level outline page listing all conversations (DMs and group/meeting rooms) in a table.
  * Selecting a row drills down to the {@link ConversationPage} for that conversation. The standard
  * row actions follow the Scout contacts-sample convention (see `docs/scout-notes.md` §11): a "New"
- * menu (plus-in-circle) opens the {@link NewConversationForm}, a "Rename" menu (pencil) opens the
+ * menu (comment-plus) opens the {@link NewConversationForm}, a "Rename" menu (pencil) opens the
  * {@link RenameConversationForm}, and a "Remove" menu (trash) deletes after a confirmation; each
  * mutation reloads the page and re-selects the affected row.
  */
@@ -42,7 +42,10 @@ export class ConversationTablePage extends PageWithTable {
           id: 'NewMenu',
           objectType: Menu,
           text: '${textKey:New}',
-          iconId: Icons.PLUS_CIRCLE,
+          // New conversation/meeting: a speech-bubble-with-plus reads better here than the generic
+          // plus-in-circle (this is a chat workspace), and the FontAwesome glyph is sized down to the
+          // native menu icons in theme/scoutkit.less so it no longer looks oversized in the menubar.
+          iconId: Icons.NEW_CONVERSATION,
           // On phones the desktop is compact and this menu renders inside the navigation breadcrumb,
           // where a verb label crowds the row — show it icon-only there (the text stays set so it is
           // still the menu's accessible name / tap tooltip). Tablet/desktop keep the label. Mirrors

@@ -1,6 +1,7 @@
-import {icons, InitModelOf, Outline} from '@eclipse-scout/core';
+import {InitModelOf, Outline} from '@eclipse-scout/core';
 import {ConversationTablePage} from './ConversationTablePage';
 import {ContactTablePage} from './ContactTablePage';
+import {Icons} from './Icons';
 
 /**
  * The workspace outline of the ScoutKit desktop. It provides the navigation tree with the two
@@ -14,8 +15,8 @@ export class WorkspaceOutline extends Outline {
   protected override _init(model: InitModelOf<this>): void {
     model.title = model.title ?? '${textKey:scoutkit.Workspace}';
     model.nodes = model.nodes ?? [
-      {objectType: ConversationTablePage, text: '${textKey:scoutkit.Conversations}', iconId: icons.LIST},
-      {objectType: ContactTablePage, text: '${textKey:scoutkit.Contacts}', iconId: icons.GROUP}
+      {objectType: ConversationTablePage, text: '${textKey:scoutkit.Conversations}', iconId: Icons.COMMENTS},
+      {objectType: ContactTablePage, text: '${textKey:scoutkit.Contacts}', iconId: Icons.ADDRESS_BOOK}
     ];
     super._init(model);
   }

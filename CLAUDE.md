@@ -120,11 +120,15 @@ Desktop (DEFAULT) — two outlines, switched via OutlineViewButtons
   truly absent, add it via the generator (`apps/web/scripts/generate-icons.py`), never a fresh CDN/font.
   Localize labels (not icons) per the i18n rules.
 - **Standard action-icon glyphs (project rule).** The three common row/menu actions always use the
-  same glyph so the UI stays consistent: **new / create → a plus-in-circle** (`Icons.PLUS_CIRCLE`,
-  FontAwesome `circle-plus`), **edit → a pencil** (`icons.PENCIL`), **delete → a trash can**
-  (`Icons.TRASH`, FontAwesome `trash`). Apply these to any "new"/"create", "edit"/"rename", or
-  "delete"/"remove" `Menu`/`Button`/`Action` (`iconId`). Use those constants — do not substitute a
-  different glyph (e.g. `GROUP_PLUS`, `REMOVE`) for these actions.
+  same glyph so the UI stays consistent: **generic new / create → a plus-in-circle**
+  (`Icons.PLUS_CIRCLE`, FontAwesome `circle-plus`), **edit → a pencil** (`icons.PENCIL`), **delete →
+  a trash can** (`Icons.TRASH`, FontAwesome `trash`). Apply these to any "new"/"create",
+  "edit"/"rename", or "delete"/"remove" `Menu`/`Button`/`Action` (`iconId`). Use those constants — do
+  not substitute a different glyph (e.g. `GROUP_PLUS`, `REMOVE`) for these actions. **Exception:
+  creating a new conversation/meeting uses a comment-plus** (`Icons.NEW_CONVERSATION`, FontAwesome
+  `comment-medical`) — it reads as "new conversation" in this chat workspace, where a bare plus-circle
+  looked generic and oversized (the `ConversationTablePage` "New" menu + `NewConversationForm` Create
+  button).
 - **Scout JS is not React.** Build widgets with `scout.create(Type, {parent, ...})`; reference
   classes directly as `objectType` in models. Lifecycle: `_init` → `_render`/`_remove`.
 - **Model-injected properties** (set from the model in `_init`) use the definite-assignment
