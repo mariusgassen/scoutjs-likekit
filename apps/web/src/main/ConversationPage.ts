@@ -1,6 +1,7 @@
-import {Form, icons, InitModelOf, PageModel, PageWithNodes, scout} from '@eclipse-scout/core';
+import {Form, InitModelOf, PageModel, PageWithNodes, scout} from '@eclipse-scout/core';
 import {ChatForm} from './ChatForm';
 import {Contact, Conversation} from '../data/MeetingApi';
+import {Icons} from './Icons';
 
 export interface ConversationPageModel extends PageModel {
   /** The conversation to open (from the conversations table). */
@@ -31,7 +32,7 @@ export class ConversationPage extends PageWithNodes {
     if (!this.iconId) {
       // A contact page resolves to a direct message; a conversation can be a DM or a meeting room.
       const direct = !!this.contact || this.conversation?.type === 'direct';
-      this.iconId = direct ? icons.PERSON_SOLID : icons.GROUP;
+      this.iconId = direct ? Icons.USER : Icons.USERS;
     }
   }
 

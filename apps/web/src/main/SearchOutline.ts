@@ -1,8 +1,9 @@
-import {icons, InitModelOf, SearchOutline as ScoutSearchOutline} from '@eclipse-scout/core';
+import {InitModelOf, SearchOutline as ScoutSearchOutline} from '@eclipse-scout/core';
 import {ConversationSearchPage} from './ConversationSearchPage';
 import {ContactSearchPage} from './ContactSearchPage';
 import {MessageSearchPage} from './MessageSearchPage';
 import {SearchResultPage} from './SearchResultPage';
+import {Icons} from './Icons';
 
 /**
  * The global-search outline of the ScoutKit desktop. It extends Scout's {@link ScoutSearchOutline},
@@ -20,9 +21,9 @@ export class SearchOutline extends ScoutSearchOutline {
   protected override _init(model: InitModelOf<this>): void {
     model.title = model.title ?? '${textKey:Search}';
     model.nodes = model.nodes ?? [
-      {objectType: ConversationSearchPage, text: '${textKey:scoutkit.Conversations}', iconId: icons.LIST},
-      {objectType: ContactSearchPage, text: '${textKey:scoutkit.Contacts}', iconId: icons.GROUP},
-      {objectType: MessageSearchPage, text: '${textKey:scoutkit.Messages}', iconId: icons.FILE}
+      {objectType: ConversationSearchPage, text: '${textKey:scoutkit.Conversations}', iconId: Icons.COMMENTS},
+      {objectType: ContactSearchPage, text: '${textKey:scoutkit.Contacts}', iconId: Icons.ADDRESS_BOOK},
+      {objectType: MessageSearchPage, text: '${textKey:scoutkit.Messages}', iconId: Icons.MESSAGE}
     ];
     super._init(model);
     // ScoutSearchOutline owns the field, debounce and validation; it fires 'search' with a valid

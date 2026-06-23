@@ -50,7 +50,7 @@ export class NewConversationForm extends Form {
             id: 'ok',
             objectType: Button,
             label: '${textKey:scoutkit.Create}',
-            iconId: Icons.PLUS_CIRCLE,
+            iconId: Icons.NEW_CONVERSATION,
             systemType: Button.SystemType.OK,
             processButton: true,
             keyStroke: 'enter'

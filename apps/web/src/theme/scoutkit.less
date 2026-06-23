@@ -62,6 +62,16 @@ body {
   border-radius: @button-border-radius;
 }
 
+/* The self-hosted FontAwesome solid glyphs (`scoutkit-icons`) are drawn closer to the em edges and
+   heavier than Scout's own icon font, so at the menu's 16px icon size they read oversized next to
+   the 13px label and beside the native glyphs (e.g. the "New" comment-plus next to the native
+   "Rename" pencil — the "New menu looks oversized" report; #31 only corrected the compact breadcrumb
+   nav). Trim just the custom-font menu glyphs to the optical size of the native menu icons. The flex
+   `align-items: center` of `.menu-item` keeps them vertically centred. */
+.menu-item > .font-icon.font-scoutkit-icons {
+  font-size: 14px;
+}
+
 /* Give the bench (the chat surface area) a subtle inset divider from the navigation. */
 .desktop-bench {
   border-left: 1px solid @border-color;

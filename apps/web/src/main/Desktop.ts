@@ -3,6 +3,7 @@ import {WorkspaceOutline} from './WorkspaceOutline';
 import {SearchOutline} from './SearchOutline';
 import {NameForm} from './NameForm';
 import {userIdentity} from '../data/UserIdentity';
+import {Icons} from './Icons';
 
 /**
  * The ScoutKit desktop. On desktop/tablet devices it uses the default display style (navigation +
@@ -35,7 +36,7 @@ export class Desktop extends ScoutDesktop {
         {
           id: 'NameMenu',
           objectType: Menu,
-          iconId: icons.PERSON_SOLID
+          iconId: Icons.CIRCLE_USER
         }
       ]
     };

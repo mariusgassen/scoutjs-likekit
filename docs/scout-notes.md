@@ -246,16 +246,17 @@ icon never means editing the font again:
   one (it wins because it is imported last).
 - `apps/web/src/main/Icons.ts` composes the catalog: `{...faIcons, ...icons}` (Scout core wins on name
   collisions — the "framework icon first" rule) plus the action-icon aliases. Per the project rule
-  (CLAUDE.md): new/create → `Icons.PLUS_CIRCLE` (FontAwesome `circle-plus`), edit → `icons.PENCIL`,
-  delete → `Icons.TRASH` (FontAwesome `trash`). Use `Icons.<NAME>` (SCREAMING_SNAKE FontAwesome names,
-  e.g. `Icons.VIDEO`, `Icons.GEAR`) for anything else.
+  (CLAUDE.md): generic new/create → `Icons.PLUS_CIRCLE` (FontAwesome `circle-plus`), edit →
+  `icons.PENCIL`, delete → `Icons.TRASH` (FontAwesome `trash`); the conversation create action uses
+  `Icons.NEW_CONVERSATION` (FontAwesome `comment-medical`). Use `Icons.<NAME>` (SCREAMING_SNAKE
+  FontAwesome names, e.g. `Icons.VIDEO`, `Icons.GEAR`) for anything else.
 - the static-site generator (`scripts/generate-site.mjs`) copies `res/fonts/*` into `prod/fonts/`
   next to Scout's own fonts so the theme CSS's relative `url(fonts/…)` resolves at runtime (no CDN).
 
 `ChatBox` is a plain-HTML surface (not a Scout widget), so its call/send buttons render the custom-font
-glyphs by hand: `IconChars.{PHONE,PHONE_SLASH,PAPER_PLANE}` (raw chars from `Icons.ts`) wrapped in a
+glyphs by hand: `IconChars.{VIDEO,VIDEO_SLASH,PAPER_PLANE}` (raw chars from `Icons.ts`) wrapped in a
 `<span class="cb-btn-icon font-scoutkit-icons">` (the `cbIcon()` helper in `ChatBox.ts`), styled via
-`.cb-btn-icon` (font-size, inherits `currentColor`). The active call swaps `phone` → `phone-slash`. The
+`.cb-btn-icon` (font-size, inherits `currentColor`). The active call swaps `video` → `video-slash`. The
 header avatar uses the Scout icon font directly (`font-family: scoutIcons`, `content: '\E034'`/`'\E006'`).
 
 **Compact-mode (mobile) navigation tweaks** (`theme/scoutkit.less`, scoped to

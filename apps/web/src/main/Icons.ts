@@ -20,14 +20,16 @@ import {faIcons} from './fa-icons';
 export const Icons = {
   ...faIcons,
   ...icons,
-  /** New / create action - a plus-in-circle (FontAwesome `circle-plus`). */
+  /** Generic new / create action - a plus-in-circle (FontAwesome `circle-plus`). */
   PLUS_CIRCLE: faIcons.CIRCLE_PLUS,
+  /** New conversation / meeting - a speech bubble with a plus (FontAwesome `comment-medical`). */
+  NEW_CONVERSATION: faIcons.COMMENT_MEDICAL,
   /** Delete / remove action - a trash can (FontAwesome `trash`). */
   TRASH: faIcons.TRASH,
-  /** Start call - a phone handset (FontAwesome `phone`). */
-  PHONE: faIcons.PHONE,
-  /** End call - a phone handset with a slash (FontAwesome `phone-slash`). */
-  PHONE_SLASH: faIcons.PHONE_SLASH,
+  /** Start call - a video camera (FontAwesome `video`); this app's calls are LiveKit video meetings. */
+  VIDEO: faIcons.VIDEO,
+  /** End call - a video camera with a slash (FontAwesome `video-slash`). */
+  VIDEO_SLASH: faIcons.VIDEO_SLASH,
   /** Send message - a paper plane (FontAwesome `paper-plane`). */
   PAPER_PLANE: faIcons.PAPER_PLANE
 } as const;
@@ -37,10 +39,10 @@ export const Icons = {
  * (e.g. {@link ChatBox}'s `<button>`s) where Scout's `iconId` machinery isn't available. Drop the
  * char into an element carrying the `font-scoutkit-icons` CSS class (theme/scoutkit.less) so the
  * right `font-family` resolves; the glyph then inherits `currentColor` and scales with `font-size`.
- * Codepoints match FontAwesome `phone` (U+F095), `phone-slash` (U+F3DD), `paper-plane` (U+F1D8).
+ * Codepoints match FontAwesome `video` (U+F03D), `video-slash` (U+F4E2), `paper-plane` (U+F1D8).
  */
 export const IconChars = {
-  PHONE: '\uF095',
-  PHONE_SLASH: '\uF3DD',
+  VIDEO: '\uF03D',
+  VIDEO_SLASH: '\uF4E2',
   PAPER_PLANE: '\uF1D8'
 } as const;
