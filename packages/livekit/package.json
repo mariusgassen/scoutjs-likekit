@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "@eclipse-scout/core": "^26.1.16",
-    "@types/jquery": "^3.5.32",
-    "typescript": "~5.9.3"
+    "@types/jquery": "^4.0.1",
+    "typescript": "~6.0.3"
   }
 }
