@@ -10,7 +10,7 @@ RUN npm run build:lib && npm run build:web
 # produces apps/web/target/site
 
 # --- Java build stage ------------------------------------------------------
-FROM maven:3.9-eclipse-temurin-25 AS build
+FROM maven:3-eclipse-temurin-26 AS build
 WORKDIR /build
 COPY services/scoutkit-server/pom.xml .
 # Warm the local repo so source-only changes don't re-download dependencies.
