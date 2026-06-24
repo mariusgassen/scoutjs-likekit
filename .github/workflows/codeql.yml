@@ -32,7 +32,7 @@ jobs:
             # Manual: the Maven module lives under services/, so we drive the build explicitly.
             build-mode: manual
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - if: matrix.language == 'java-kotlin'
         uses: actions/setup-java@v5
         with:
