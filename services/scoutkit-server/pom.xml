@@ -17,7 +17,7 @@
     <org.eclipse.scout.rt.version>26.1.16</org.eclipse.scout.rt.version>
     <java-jwt.version>4.5.2</java-jwt.version>
     <!-- Real database: PostgreSQL, accessed through jOOQ over a HikariCP pool; schema owned by Flyway. -->
-    <postgresql.version>42.7.11</postgresql.version>
+    <postgresql.version>42.7.12</postgresql.version>
     <hikaricp.version>7.1.0</hikaricp.version>
     <flyway.version>12.9.0</flyway.version>
     <jooq.version>3.21.5</jooq.version>
