@@ -14,7 +14,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.release>25</maven.compiler.release>
-    <org.eclipse.scout.rt.version>26.1.16</org.eclipse.scout.rt.version>
+    <org.eclipse.scout.rt.version>26.1.18</org.eclipse.scout.rt.version>
     <java-jwt.version>4.5.2</java-jwt.version>
     <!-- Real database: PostgreSQL, accessed through jOOQ over a HikariCP pool; schema owned by Flyway. -->
     <postgresql.version>42.7.11</postgresql.version>
