@@ -15,7 +15,7 @@
     "@eclipse-scout/core": "^26.1.16"
   },
   "devDependencies": {
-    "@eclipse-scout/cli": "^26.1.16",
-    "typescript": "~6.0.3"
+    "@eclipse-scout/cli": "^26.1.18",
+    "typescript": "~7.0.2"
   }
 }
