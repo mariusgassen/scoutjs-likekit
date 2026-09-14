@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@scoutkit/livekit": "0.1.0",
-    "@eclipse-scout/core": "^26.1.16"
+    "@eclipse-scout/core": "^26.1.18"
   },
   "devDependencies": {
     "@eclipse-scout/cli": "^26.1.16",
