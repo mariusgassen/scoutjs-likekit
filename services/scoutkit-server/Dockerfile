@@ -2,7 +2,7 @@
 # (at /api/*) from one container — no separate nginx. Build context is the repository root.
 
 # --- Web build stage: build the Scout JS app into a static site ------------
-FROM node:25-alpine AS web
+FROM node:26-alpine AS web
 WORKDIR /repo
 COPY . .
 RUN npm install
