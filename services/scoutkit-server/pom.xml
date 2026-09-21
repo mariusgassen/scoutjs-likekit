@@ -19,7 +19,7 @@
     <!-- Real database: PostgreSQL, accessed through jOOQ over a HikariCP pool; schema owned by Flyway. -->
     <postgresql.version>42.7.13</postgresql.version>
     <hikaricp.version>7.1.0</hikaricp.version>
-    <flyway.version>13.6.0</flyway.version>
+    <flyway.version>13.7.0</flyway.version>
     <jooq.version>3.21.8</jooq.version>
   </properties>
 
